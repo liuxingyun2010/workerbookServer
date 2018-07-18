@@ -116,7 +116,7 @@ const Project = {
   },
   MissionProjectDontExist: {
     resCode: '400006',
-    resMsg: '项目id不存在'
+    resMsg: '项目不存在'
   },
 }
 
@@ -149,6 +149,10 @@ const Mission = {
   MissionDeadlineError: {
     resCode: '400007',
     resMsg: '任务的截止时间不能大于项目的截止时间'
+  },
+  MissionNotFount: {
+    resCode: '400008',
+    resMsg: '任务不存在'
   }
 }
 

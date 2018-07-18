@@ -63,7 +63,7 @@ module.exports = app => {
           })
         }
 
-        await ctx.service.department.delete()
+        await ctx.service.mission.delete()
 
         ctx.success({
           status: HttpStatus.StatusNoContent

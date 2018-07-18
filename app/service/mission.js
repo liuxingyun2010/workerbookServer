@@ -219,7 +219,7 @@ module.exports = app => {
       }
     }
 
-    // 删除部门
+    // 删除任务
     async delete() {
       try {
         const {
@@ -229,35 +229,24 @@ module.exports = app => {
 
         if (!this.ctx.helper.isObjectId(id)) {
           return Promise.reject({
-            code: ResCode.DepartmentIdError
-          })
-        }
-
-        // 查找部门，不能存在重名的名称
-        const departmentResult = await this.findDepartment({
-          _id: id
-        })
-
-        if (!departmentResult) {
-          return Promise.reject({
-            code: ResCode.DepartmentDontExist
-          })
-        }
-
-        if (departmentResult.count !== 0) {
-          return Promise.reject({
-            code: ResCode.DepartmentDontRemove
+            code: ResCode.MissionIdError
           })
         }
 
         // 找到并且更新
-        const findDepartment = await ctx.model.Department.update({
+        const result = await ctx.model.Mission.update({
           _id: id
         }, {
           $set: {
             isDelete: true
           }
         })
+
+        if (!result.n) {
+          return Promise.reject({
+            code: ResCode.MissionNotFount
+          })
+        }
 
       } catch (e) {
         return Promise.reject({

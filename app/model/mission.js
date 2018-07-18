@@ -2,7 +2,6 @@
  *  任务表字段
  *  name   任务名称
  *  status  状态   1.正常  2.暂停，
- *  projectId 项目id
  *  progress 任务进度
  *  description 任务描述
  *  deadline 截止时间
@@ -27,10 +26,6 @@ module.exports = app => {
       type: Number,
       default: 1
     },
-    // projectId: {
-    //   type: String,
-    //   required: true
-    // },
     progress: {
       type: Number,
       default: 0,

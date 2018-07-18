@@ -5,6 +5,6 @@ module.exports = app => {
   app.patch('/missions/:id', app.jwt, checkJwt(), 'mission.update')
   // app.get('/departments/', app.jwt, 'department.list')
   // app.get('/departments/:id', app.jwt, 'department.findOne')
-  // app.delete('/departments/:id', app.jwt, checkJwt(), 'department.delete')
+  app.delete('/missions/:id', app.jwt, checkJwt(), 'mission.delete')
 }
 

@@ -8,6 +8,7 @@
  *  users 参与任务的人员，子文档
  *  users.id 参与人员id
  *  users.day 预计天数
+ *  users.isDelete 是否从任务中删除
  *  isDelete 是否已经删除
  *  createTime 创建时间
  *  updateTIme 修改时间
@@ -39,17 +40,20 @@ module.exports = app => {
       type: Date,
       required: true
     },
-    users: [{
-      id: {
-        type: String,
-        required: true,
+    users: [new mongoose.Schema({
+      info: {
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
       },
       day: {
         type: Number,
         required: true
       }
-    }],
+    }, {_id: 0})],
+    // users: [{
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: 'User'
+    // }],
     isDelete: {
       type: Boolean,
       default: false

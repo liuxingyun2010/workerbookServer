@@ -4,7 +4,7 @@ const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
   return class ProjectController extends app.Controller {
-    // 获取部门列表
+    // 获取项目列表
     async list() {
       const { ctx } = this
       try {
@@ -21,29 +21,24 @@ module.exports = app => {
       }
     }
 
-    // 获取单个部门信息
+    // 获取单个项目
     async one() {
-      // const { ctx } = this
-      // try {
-      //   const result = await ctx.service.project.findProject()
-      //   const {id, count, name, createTime} = result
-      //   ctx.success({
-      //     data: {
-      //       id,
-      //       count,
-      //       name,
-      //       createTime
-      //     }
-      //   })
-      // }
-      // catch (e) {
-      //   ctx.error({
-      //     code: e.code
-      //   })
-      // }
+      const { ctx } = this
+      try {
+        const result = await ctx.service.project.findProject()
+        // const {id, count, name, createTime} = result
+        ctx.success({
+          data: result
+        })
+      }
+      catch (e) {
+        ctx.error({
+          code: e.code
+        })
+      }
     }
 
-    // 添加部门
+    // 添加项目
     async add() {
       const { ctx } = this
       try {
@@ -67,7 +62,7 @@ module.exports = app => {
       }
     }
 
-    // 修改部门信息，只能修改名称
+    // 修改项目
     async update() {
       const { ctx } = this
       try {
@@ -78,7 +73,7 @@ module.exports = app => {
           })
         }
 
-        await ctx.service.department.update()
+        await ctx.service.project.update()
 
         ctx.success({
           status: HttpStatus.StatusNoContent
@@ -102,7 +97,7 @@ module.exports = app => {
           })
         }
 
-        await ctx.service.department.delete()
+        await ctx.service.project.delete()
 
         ctx.success({
           status: HttpStatus.StatusNoContent

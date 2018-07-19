@@ -75,6 +75,55 @@ module.exports = app => {
         })
       }
     }
+
+
+    // 添加某个人到任务中
+    async person() {
+      const { ctx } = this
+      try {
+       // 不是管理员不允许操作
+        if (ctx.userInfo.role !== 99) {
+          return ctx.error({
+            status: HttpStatus.StatusForbidden
+          })
+        }
+
+        await ctx.service.mission.person()
+
+        ctx.success({
+          status: HttpStatus.StatusNoContent
+        })
+      }
+      catch (e) {
+        ctx.error({
+          code: e.code
+        })
+      }
+    }
+
+     // 添加某个人到任务中
+    async delPerson() {
+      const { ctx } = this
+      try {
+       // 不是管理员不允许操作
+        if (ctx.userInfo.role !== 99) {
+          return ctx.error({
+            status: HttpStatus.StatusForbidden
+          })
+        }
+
+        await ctx.service.mission.delPerson()
+
+        ctx.success({
+          status: HttpStatus.StatusNoContent
+        })
+      }
+      catch (e) {
+        ctx.error({
+          code: e.code
+        })
+      }
+    }
   }
 }
 

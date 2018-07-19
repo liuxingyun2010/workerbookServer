@@ -3,72 +3,124 @@ const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
   class ProjectService extends app.Service {
-    // // 查询项目
-    // async getList() {
-    //   try {
-    //     const {
-    //       ctx
-    //     } = this
+    // 将人员添加至任务
+    async person() {
+      try {
+        const { ctx } = this
+        const id = ctx.params.id
+        const uid = ctx.params.uid
+        const requestBody = ctx.request.body
+        const { day } = requestBody
+        if (!ctx.helper.isObjectId(uid)) {
+          return Promise.reject({
+            code: ResCode.UserIdIlligal
+          })
+        }
 
-    //     const list = await ctx.model.Project.find({
-    //       isDelete: {
-    //         $ne: true
-    //       }
-    //     }, '-createTime -updateTime -isDelete').populate({
-    //       path: 'departments',
-    //       select: {
-    //         name: 1,
-    //         count: 1,
-    //         _id: 1
-    //       }
-    //     })
+        if (!day) {
+          return Promise.reject({
+            code: ResCode.MissionDayNoFound
+          })
+        }
 
-    //     return list
-    //   } catch (e) {
-    //     return Promise.reject({
-    //       code: ResCode.Error,
-    //       status: HttpStatus.StatusInternalServerError
-    //     })
-    //   }
-    // }
+        if (!ctx.helper.isObjectId(id)) {
+          return Promise.reject({
+            code: ResCode.MissionIdError
+          })
+        }
 
-    // // 查询单个部门
-    // async findOneDepartment() {
-    //   try {
-    //     const { ctx } = this
-    //     const id = this.ctx.params.id || ''
+        // 判断项目是否存在
+        const missionInfo = await this.findMissionById(id)
 
-    //     if (!this.ctx.helper.isObjectId(id)) {
-    //       return Promise.reject({
-    //         code: ResCode.DepartmentIdError
-    //       })
-    //     }
+        if (!missionInfo) {
+          return Promise.reject({
+            code: ResCode.MissionNotFount
+          })
+        }
 
-    //     const department = await this.findDepartment({
-    //       _id: id
-    //     })
+        // 判断新添加的用户是否已经在项目里面
+        // 并且不是已经删除的用户
+        const findPerson = await ctx.model.Mission.findOne({
+          _id: id,
+          'users.info': uid
+        })
 
-    //     if (!department) {
-    //       return Promise.reject({
-    //         code: ResCode.DepartmentExist
-    //       })
-    //     }
 
-    //     return department
-    //   }catch (e) {
-    //     return Promise.reject({
-    //       code: ResCode.Error,
-    //       status: HttpStatus.StatusInternalServerError
-    //     })
-    //   }
-    // }
+        let result = null
 
-    // // 查找单个部门
-    // async findDepartment(params) {
-    //   // 查找部门，不能重复
-    //   const findDepartment = await this.ctx.model.Department.findOne(params)
-    //   return findDepartment
-    // }
+        if (findPerson) {
+          result = await ctx.model.Mission.findOneAndUpdate({
+            _id: id,
+            'users.info': uid
+          }, {
+            $set: {
+              'users.$.day': day
+            }
+          },{new: true})
+        } else {
+          result = await ctx.model.Mission.findOneAndUpdate({
+            _id: id
+          }, {
+            $addToSet: {
+              users: {
+                info: uid,
+                day
+              }
+            }
+          },{new: true})
+        }
+
+        // 更新完成之后，重新写入redis
+        if (result) {
+          await app.redis.set(`wb:mission:${id}`, JSON.stringify(result))
+        }
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+    // 将人员从任务删除
+    async delPerson() {
+      try {
+        const { ctx } = this
+        const id = ctx.params.id
+        const uid = ctx.params.uid
+        if (!ctx.helper.isObjectId(uid)) {
+          return Promise.reject({
+            code: ResCode.UserIdIlligal
+          })
+        }
+
+        if (!ctx.helper.isObjectId(id)) {
+          return Promise.reject({
+            code: ResCode.MissionIdError
+          })
+        }
+
+        const result = await ctx.model.Mission.findOneAndUpdate({
+          _id: id
+        }, {
+          $pull: {
+            users: {
+              info: uid
+            }
+          }
+        },{new: true})
+
+        // 更新完成之后，重新写入redis
+        if (result) {
+          await app.redis.del(`wb:mission:${id}`, JSON.stringify(result))
+        }
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
 
     // 添加任务
     async save() {
@@ -144,6 +196,24 @@ module.exports = app => {
       }
     }
 
+    // 查找单个任务
+    async findMissionById(id) {
+      const result = await app.redis.get(`wb:mission:${id}`)
+
+      if (result) {
+        return JSON.parse(result)
+      }
+
+      const project = await this.ctx.model.Mission.findOne({
+        _id: id
+      })
+
+      if (project) {
+        await app.redis.set(`wb:mission:${id}`, JSON.stringify(project))
+      }
+
+      return project
+    }
 
     // 更新任务
     async update() {

@@ -274,7 +274,7 @@ module.exports = app => {
             role,
             title
           }
-        })
+        },{new: true})
 
         if (!result) {
           return Promise.reject({
@@ -313,7 +313,7 @@ module.exports = app => {
           $set: {
             isDelete: true
           }
-        })
+        },{new: true})
 
         if (!result) {
           return Promise.reject({

@@ -114,9 +114,13 @@ const Project = {
     resCode: '300003',
     resMsg: '项目关联部门不能为空'
   },
-  MissionProjectDontExist: {
-    resCode: '400006',
+  ProjectDontExist: {
+    resCode: '300004',
     resMsg: '项目不存在'
+  },
+  ProjectIdError: {
+    resCode: '300005',
+    resMsg: '项目id不合法'
   },
 }
 
@@ -153,6 +157,10 @@ const Mission = {
   MissionNotFount: {
     resCode: '400008',
     resMsg: '任务不存在'
+  },
+  MissionDayNoFound: {
+    resCode: '400009',
+    resMsg: '预计开发天数不能为空'
   }
 }
 

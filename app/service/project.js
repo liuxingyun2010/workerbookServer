@@ -11,17 +11,26 @@ module.exports = app => {
         } = this
 
         const list = await ctx.model.Project.find({
-          isDelete: {
-            $ne: true
-          }
-        }, '-createTime -updateTime -isDelete').populate({
-          path: 'departments',
-          select: {
-            name: 1,
-            count: 1,
-            _id: 1,
-          }
-        }).populate('missions', '-isDelete -updateTime')
+            isDelete: {
+              $ne: true
+            }
+          }, '-createTime -updateTime -isDelete')
+          .populate({
+            path: 'departments',
+            select: {
+              name: 1,
+              count: 1,
+              _id: 1,
+            }
+          })
+          .populate({
+            path: 'missions',
+            select: '-isDelete -updateTime',
+            populate: {
+              path: 'users.info',
+              select: '-createTime -updateTime -isDelete -password -department -role'
+            }
+          })
 
         return list
       } catch (e) {
@@ -32,7 +41,7 @@ module.exports = app => {
       }
     }
 
-    // 添加任务
+    // 项目中添加任务
     async addMission(pid, mid) {
       try {
         const result = await this.ctx.model.Project.findOneAndUpdate({
@@ -41,13 +50,12 @@ module.exports = app => {
           $push: {
             missions: app.mongoose.Types.ObjectId(mid)
           }
-        })
+        },{new: true})
 
         if (result) {
           await app.redis.set(`wb:project:${pid}`, JSON.stringify(result))
         }
-      }
-      catch(e) {
+      } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError
@@ -55,36 +63,37 @@ module.exports = app => {
       }
     }
 
-    // // 查询单个部门
-    // async findOneProject() {
-    //   try {
-    //     const { ctx } = this
-    //     const id = this.ctx.params.id || ''
+    // 获取单个项目
+    async findProject() {
+      try {
+        const {
+          ctx
+        } = this
 
-    //     if (!this.ctx.helper.isObjectId(id)) {
-    //       return Promise.reject({
-    //         code: ResCode.DepartmentIdError
-    //       })
-    //     }
+        const id = ctx.params.id
 
-    //     const department = await this.findDepartment({
-    //       _id: id
-    //     })
+        if (!this.ctx.helper.isObjectId(id)) {
+          return Promise.reject({
+            code: ResCode.ProjectIdError
+          })
+        }
 
-    //     if (!department) {
-    //       return Promise.reject({
-    //         code: ResCode.DepartmentExist
-    //       })
-    //     }
+        const result = await this.findProjectById(id)
 
-    //     return department
-    //   }catch (e) {
-    //     return Promise.reject({
-    //       code: ResCode.Error,
-    //       status: HttpStatus.StatusInternalServerError
-    //     })
-    //   }
-    // }
+        if (!result) {
+          return Promise.reject({
+            code: ResCode.ProjectDontExist
+          })
+        }
+
+        return result
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
 
     // 通过id查询项目
     async findProjectById(id) {
@@ -96,6 +105,22 @@ module.exports = app => {
 
       const project = await this.ctx.model.Project.findOne({
         _id: id
+      }, '-createTime -updateTime -isDelete')
+      .populate({
+        path: 'departments',
+        select: {
+          name: 1,
+          count: 1,
+          _id: 1,
+        }
+      })
+      .populate({
+        path: 'missions',
+        select: '-isDelete -updateTime',
+        populate: {
+          path: 'users.info',
+          select: '-createTime -updateTime -isDelete -password -department -role'
+        }
       })
 
       if (project) {
@@ -105,7 +130,7 @@ module.exports = app => {
       return project
     }
 
-    // 添加部门
+    // 添加项目
     async save() {
       try {
         const {
@@ -155,8 +180,7 @@ module.exports = app => {
       }
     }
 
-
-    // 更新
+    // 更新项目
     async update() {
       try {
         const {
@@ -164,52 +188,45 @@ module.exports = app => {
         } = this
         const id = ctx.params.id
         const requestBody = ctx.request.body
-
         const {
-          name
+          name,
+          deadline,
+          description = '',
+          departments,
+          weight = 1
         } = requestBody
 
-        if (!name) {
-          return Promise.reject({
-            code: ResCode.DepartmentNameEmpty
-          })
+        const params = {}
+        if (name) {
+          params.name = name
         }
 
-        if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.DepartmentIdError
-          })
+        if (deadline) {
+          params.deadline = deadline
         }
 
+        if (departments && departments.length === 0) {
+          params.departments = departments
+        }
 
-        // 查找部门，不能存在重名的名称
-        const department = await this.findDepartment({
-          _id: {
-            $ne: id
-          },
-          name: name
-        })
-
-        if (department) {
-          return Promise.reject({
-            code: ResCode.DepartmentExist
-          })
+        if (weight) {
+          params.weight = weight
         }
 
         // 找到并且更新
-        const result = await ctx.model.Department.update({
+        const result = await ctx.model.Project.update({
           _id: id
         }, {
-          $set: {
-            name
-          }
+          $set: params
         })
 
         if (!result.n) {
           return Promise.reject({
-            code: ResCode.DepartmentDontExist
+            code: ResCode.ProjectDontExist
           })
         }
+
+        await app.redis.del(`wb:project:${id}`)
 
       } catch (e) {
         return Promise.reject({
@@ -219,7 +236,7 @@ module.exports = app => {
       }
     }
 
-    // 删除部门
+    // 删除项目
     async delete() {
       try {
         const {
@@ -229,35 +246,22 @@ module.exports = app => {
 
         if (!this.ctx.helper.isObjectId(id)) {
           return Promise.reject({
-            code: ResCode.DepartmentIdError
-          })
-        }
-
-        // 查找部门，不能存在重名的名称
-        const departmentResult = await this.findDepartment({
-          _id: id
-        })
-
-        if (!departmentResult) {
-          return Promise.reject({
-            code: ResCode.DepartmentDontExist
-          })
-        }
-
-        if (departmentResult.count !== 0) {
-          return Promise.reject({
-            code: ResCode.DepartmentDontRemove
+            code: ResCode.ProjectIdError
           })
         }
 
         // 找到并且更新
-        const findDepartment = await ctx.model.Department.update({
+        const findProject = await ctx.model.Project.update({
           _id: id
         }, {
           $set: {
             isDelete: true
           }
         })
+
+        if (findProject.n) {
+          await app.redis.del(`wb:project:${id}`)
+        }
 
       } catch (e) {
         return Promise.reject({

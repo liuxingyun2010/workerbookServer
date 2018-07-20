@@ -203,5 +203,54 @@ module.exports = app => {
         })
       }
     }
+
+
+    // 修改密码
+    async editPwd() {
+      const { ctx } = this
+      try {
+        // 不是管理员不允许操作
+        if (ctx.userInfo.role !== 99) {
+          return ctx.error({
+            status: HttpStatus.StatusForbidden
+          })
+        }
+
+        await ctx.service.user.updatePwd()
+
+        ctx.success({
+          status: HttpStatus.StatusNoContent
+        })
+      } catch (e) {
+         ctx.error({
+          code: e.code
+        })
+      }
+    }
+
+
+    // 重置密码
+    async resetPwd() {
+      const { ctx } = this
+      try {
+        // 不是管理员不允许操作
+        if (ctx.userInfo.role !== 99) {
+          return ctx.error({
+            status: HttpStatus.StatusForbidden
+          })
+        }
+
+        await ctx.service.user.resetPassword()
+
+        ctx.success({
+          status: HttpStatus.StatusNoContent
+        })
+      } catch (e) {
+         ctx.error({
+          code: e.code
+        })
+      }
+    }
+
   }
 }

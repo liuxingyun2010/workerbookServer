@@ -71,6 +71,10 @@ const USER = {
   UserIdIlligal: {
     resCode: '100016',
     resMsg: '用户id不合法'
+  },
+  NewPwEmpty: {
+    resCode: '100017',
+    resMsg: '新密码不能为空'
   }
 }
 

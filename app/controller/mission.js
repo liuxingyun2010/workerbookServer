@@ -82,7 +82,7 @@ module.exports = app => {
       const { ctx } = this
       try {
        // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
+        if (ctx.userInfo.role !== 99 || ctx.userInfo.role !== 2) {
           return ctx.error({
             status: HttpStatus.StatusForbidden
           })

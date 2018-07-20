@@ -382,6 +382,119 @@ module.exports = app => {
         })
       }
     }
+
+    async updatePwd() {
+      try {
+        const { ctx } = this
+        const id = ctx.params.id
+        const requestBody = ctx.request.body
+
+        const {
+          password,
+          newPassword
+        } = requestBody
+
+
+        if (!password) {
+          return Promise.reject({
+            code: ResCode.PwEmpty
+          })
+        }
+
+        if (!newPassword) {
+          return Promise.reject({
+            code: ResCode.NewPwEmpty
+          })
+        }
+
+        if (!ctx.helper.isObjectId(id)) {
+          return Promise.reject({
+            code: ResCode.UserIdIlligal
+          })
+        }
+
+        const findOne = await this.findUserByUsernameAndPw({
+          _id: id,
+          password: md5(password)
+        })
+
+        if (!findOne) {
+          return Promise.reject({
+            code: ResCode.PwError
+          })
+        }
+
+        // 查找用户并更新
+        const result = await ctx.model.User.update({
+          _id: id,
+          password: md5(password)
+        }, {
+          $set: {
+            password: md5(newPassword)
+          }
+        })
+
+        // 更新成功则删除redis
+        if (result.n) {
+          await app.redis.del(`wb:user:${id}`)
+        }
+
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+    async resetPassword() {
+      try {
+        const { ctx } = this
+        const id = ctx.params.id
+        const requestBody = ctx.request.body
+        const { newPassword } = requestBody
+
+        if (!newPassword) {
+          return Promise.reject({
+            code: ResCode.NewPwEmpty
+          })
+        }
+
+        if (!ctx.helper.isObjectId(id)) {
+          return Promise.reject({
+            code: ResCode.UserIdIlligal
+          })
+        }
+
+        const findOne = await this.findUserById(id)
+
+        if (!findOne) {
+          return Promise.reject({
+            code: ResCode.UserNotFound
+          })
+        }
+
+        // 查找用户并更新
+        const result = await ctx.model.User.update({
+          _id: id
+        }, {
+          $set: {
+            password: md5(newPassword)
+          }
+        })
+
+        // 更新成功则删除redis
+        if (result.n) {
+          await app.redis.del(`wb:user:${id}`)
+        }
+
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
   }
   return UserService
 }

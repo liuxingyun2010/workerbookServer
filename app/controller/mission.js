@@ -8,8 +8,8 @@ module.exports = app => {
     async add() {
       const { ctx } = this
       try {
-        // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
+        // 不是管理员和了leader不允许操作
+        if (ctx.userInfo.role !== 99 && ctx.userInfo.role !== 2) {
           return ctx.error({
             status: HttpStatus.StatusForbidden
           })
@@ -28,12 +28,12 @@ module.exports = app => {
       }
     }
 
-    // 修改部门信息，只能修改名称
+    // 更新任务
     async update() {
       const { ctx } = this
       try {
-        // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
+        // 不是管理员和了leader不允许操作
+        if (ctx.userInfo.role !== 99 && ctx.userInfo.role !== 2) {
           return ctx.error({
             status: HttpStatus.StatusForbidden
           })
@@ -52,67 +52,18 @@ module.exports = app => {
       }
     }
 
-    // 删除部门，只有放部门人员为0的时候才能删除
+    // 删除任务
     async delete() {
       const { ctx } = this
       try {
-       // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
+        // 不是管理员和了leader不允许操作
+        if (ctx.userInfo.role !== 99 && ctx.userInfo.role !== 2) {
           return ctx.error({
             status: HttpStatus.StatusForbidden
           })
         }
 
         await ctx.service.mission.delete()
-
-        ctx.success({
-          status: HttpStatus.StatusNoContent
-        })
-      }
-      catch (e) {
-        ctx.error({
-          code: e.code
-        })
-      }
-    }
-
-
-    // 添加某个人到任务中
-    async person() {
-      const { ctx } = this
-      try {
-       // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99 || ctx.userInfo.role !== 2) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
-        await ctx.service.mission.person()
-
-        ctx.success({
-          status: HttpStatus.StatusNoContent
-        })
-      }
-      catch (e) {
-        ctx.error({
-          code: e.code
-        })
-      }
-    }
-
-     // 添加某个人到任务中
-    async delPerson() {
-      const { ctx } = this
-      try {
-       // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
-        await ctx.service.mission.delPerson()
 
         ctx.success({
           status: HttpStatus.StatusNoContent

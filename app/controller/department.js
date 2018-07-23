@@ -21,6 +21,23 @@ module.exports = app => {
       }
     }
 
+    // 获取部门列表,前端
+    async f_list() {
+      const { ctx } = this
+      try {
+        const list = await ctx.service.department.getDepartmentList()
+
+        ctx.success({
+          data: list
+        })
+      }
+      catch (e) {
+        ctx.error({
+          code: e.code
+        })
+      }
+    }
+
     // 获取单个部门信息
     async findOne() {
       const { ctx } = this

@@ -110,6 +110,7 @@ module.exports = app => {
           status: HttpStatus.StatusNoContent
         })
       } catch (e) {
+        console.log(e)
          ctx.error({
           code: e.code
         })
@@ -158,6 +159,7 @@ module.exports = app => {
           nickname,
           role,
           title,
+          status,
           department: {
             _id: departmentId,
             name: departmentName
@@ -174,6 +176,7 @@ module.exports = app => {
             nickname,
             role,
             title,
+            status,
             department: {
               id: departmentId,
               name: departmentName
@@ -188,8 +191,24 @@ module.exports = app => {
       }
     }
 
-    // 获取所有列表
+    // 获取所有列表， 管理后台
     async list() {
+      const { ctx } = this
+      try {
+        const result = await ctx.service.user.findUserList()
+        ctx.success({
+          data: result
+        })
+      }
+      catch(e) {
+        ctx.error({
+          code: e.code
+        })
+      }
+    }
+
+    // 获取所有列表， 前端
+    async f_list() {
       const { ctx } = this
       try {
         const result = await ctx.service.user.findUserList()

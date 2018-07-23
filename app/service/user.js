@@ -228,7 +228,8 @@ module.exports = app => {
           mobile,
           email,
           role,
-          title
+          title,
+          status
         } = requestBody
 
 
@@ -241,6 +242,12 @@ module.exports = app => {
         if (!departmentId) {
           return Promise.reject({
             code: ResCode.DepartmentEmpty
+          })
+        }
+
+        if (!ctx.helper.isObjectId(departmentId)) {
+          return Promise.reject({
+            code: ResCode.DepartmentIdError
           })
         }
 
@@ -262,17 +269,48 @@ module.exports = app => {
           })
         }
 
+        if (!status) {
+          return Promise.reject({
+            code: ResCode.UserStatusEmpty
+          })
+        }
+
+        const user = await this.findUserById(id)
+        if (!user) {
+          return Promise.reject({
+            code: ResCode.UserNotFound
+          })
+        }
+        if (user.department._id !== departmentId) {
+          await ctx.model.Department.update({
+            _id: user.department._id
+          }, {
+            $inc: {
+              count: -1
+            }
+          })
+
+          await ctx.model.Department.update({
+            _id: departmentId
+          }, {
+            $inc: {
+              count: 1
+            }
+          })
+        }
+
         // 查找用户并更新
         const result = await ctx.model.User.findOneAndUpdate({
           _id: id
         }, {
           $set: {
             nickname,
-            departmentId,
+            departmentId: app.mongoose.Types.ObjectId(departmentId),
             mobile,
             email,
             role,
-            title
+            title,
+            status
           }
         },{new: true})
 
@@ -369,7 +407,7 @@ module.exports = app => {
         result.count = count
         result.list = list
 
-        if(!skip && !limit) {
+        if(limit) {
           result.limit = limit
           result.skip = skip
         }

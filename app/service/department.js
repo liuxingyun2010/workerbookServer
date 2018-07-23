@@ -8,7 +8,16 @@ module.exports = app => {
       try {
         const { ctx } = this
 
-        const findDepartment = await ctx.model.Department.aggregate([{
+        // 过滤掉管理员
+        const params = {
+          isDelete: {
+            $ne: true
+          }
+        }
+
+        let result = {}
+
+        let sql = [{
           $match: {
             isDelete: {$ne: true}
           }
@@ -20,9 +29,33 @@ module.exports = app => {
             count: 1,
             createTime: 1
           }
-        }])
+        }]
 
-        return findDepartment
+        let { skip = 0, limit = 0 } = ctx.query
+        skip = Number(skip)
+        limit = Number(limit)
+
+        if (limit){
+          sql.push({
+            $skip: skip
+          },{
+            $limit: limit
+          })
+        }
+
+        const count = await ctx.model.User.countDocuments(params)
+
+        const list = await ctx.model.Department.aggregate(sql)
+
+        result.count = count
+        result.list = list
+
+        if(limit) {
+          result.limit = limit
+          result.skip = skip
+        }
+
+        return result
       }catch (e) {
         return Promise.reject({
           code: ResCode.Error,

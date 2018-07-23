@@ -32,28 +32,14 @@ module.exports = app => {
       default: 0,
       required: 0
     },
-    description: {
-      type: String,
-      default: ''
-    },
     deadline: {
       type: Date,
       required: true
     },
-    users: [new mongoose.Schema({
-      info: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      },
-      day: {
-        type: Number,
-        required: true
-      }
-    }, {_id: 0})],
-    // users: [{
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: 'User'
-    // }],
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
     isDelete: {
       type: Boolean,
       default: false

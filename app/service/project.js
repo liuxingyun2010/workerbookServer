@@ -27,7 +27,7 @@ module.exports = app => {
             path: 'missions',
             select: '-isDelete -updateTime',
             populate: {
-              path: 'users.info',
+              path: 'user',
               select: '-createTime -updateTime -isDelete -password -department -role'
             }
           })
@@ -98,7 +98,6 @@ module.exports = app => {
     // 通过id查询项目
     async findProjectById(id) {
       const result = await app.redis.get(`wb:project:${id}`)
-
       if (result) {
         return JSON.parse(result)
       }
@@ -118,7 +117,7 @@ module.exports = app => {
         path: 'missions',
         select: '-isDelete -updateTime',
         populate: {
-          path: 'users.info',
+          path: 'user',
           select: '-createTime -updateTime -isDelete -password -department -role'
         }
       })

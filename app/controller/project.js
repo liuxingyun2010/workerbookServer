@@ -21,6 +21,24 @@ module.exports = app => {
       }
     }
 
+    // 前端获取项目
+    //
+    async f_list() {
+      const { ctx } = this
+      try {
+        const list = await ctx.service.project.getListByRole()
+
+        ctx.success({
+          data: list
+        })
+      }
+      catch (e) {
+        ctx.error({
+          code: e.code
+        })
+      }
+    }
+
     // 获取单个项目
     async one() {
       const { ctx } = this

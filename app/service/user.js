@@ -189,13 +189,7 @@ module.exports = app => {
           role
         })
 
-        await ctx.model.Department.update({
-          _id: app.mongoose.Types.ObjectId(departmentId)
-        }, {
-          $inc: {
-            count: 1
-          }
-        })
+        this.calcMemberCount([departmentId])
 
         return userInfo
 
@@ -281,23 +275,6 @@ module.exports = app => {
             code: ResCode.UserNotFound
           })
         }
-        if (user.department._id !== departmentId) {
-          await ctx.model.Department.update({
-            _id: user.department._id
-          }, {
-            $inc: {
-              count: -1
-            }
-          })
-
-          await ctx.model.Department.update({
-            _id: departmentId
-          }, {
-            $inc: {
-              count: 1
-            }
-          })
-        }
 
         // 查找用户并更新
         const result = await ctx.model.User.findOneAndUpdate({
@@ -305,7 +282,7 @@ module.exports = app => {
         }, {
           $set: {
             nickname,
-            departmentId: app.mongoose.Types.ObjectId(departmentId),
+            department: app.mongoose.Types.ObjectId(departmentId),
             mobile,
             email,
             role,
@@ -322,7 +299,12 @@ module.exports = app => {
 
         await app.redis.del(`wb:user:${id}`)
 
-      } catch (e) {
+        // 动态计算所有
+        if (String(user.department._id) !== String(departmentId)) {
+          this.calcMemberCount([user.department._id, departmentId])
+        }
+      }
+      catch (e) {
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError
@@ -360,6 +342,9 @@ module.exports = app => {
         }
 
         await app.redis.del(`wb:user:${id}`)
+
+        // 更新用户
+        this.calcMemberCount([result.department])
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
@@ -381,19 +366,23 @@ module.exports = app => {
 
         let result = {}
 
-        let { skip = 0, limit = 0, departmentId } = ctx.query
+        let { skip = 0, limit = 0, departments } = ctx.query
         skip = Number(skip)
         limit = Number(limit)
 
-        if (departmentId) {
-          if (!ctx.helper.isObjectId(departmentId)) {
-            return []
-          }
+        // 逗号隔开
+        if (departments) {
+          let ds = departments.split(',')
+          ds = ds.map(item => {
+            return app.mongoose.Types.ObjectId(item)
+          })
 
-          params.department = departmentId
+          params.department = {
+            $in: ds
+          }
         }
 
-        const count = await ctx.model.User.countDocuments(params)
+        const count = await ctx.model.User.find(params).count()
 
         // 查找用户并更新
         const list = await ctx.model.User.find(params, '-isDelete -updateTime -password').skip(skip).limit(limit).populate({
@@ -527,6 +516,33 @@ module.exports = app => {
         }
 
       } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+    async calcMemberCount(list) {
+      try {
+        list.forEach(async (item, index) => {
+          const id = app.mongoose.Types.ObjectId(item)
+
+          const count = await this.ctx.model.User.find({
+            department: id,
+            isDelete: false
+          }).count()
+
+          await this.ctx.model.Department.update({
+            _id: id
+          }, {
+            $set: {
+              count: count
+            }
+          })
+        })
+      }
+      catch(e) {
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError

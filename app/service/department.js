@@ -8,7 +8,7 @@ module.exports = app => {
       try {
         const { ctx } = this
 
-        // 过滤掉管理员
+        // 过滤掉已经被删除的部门
         const params = {
           isDelete: {
             $ne: true

@@ -10,11 +10,21 @@ module.exports = app => {
           ctx
         } = this
 
-        const list = await ctx.model.Project.find({
-            isDelete: {
-              $ne: true
-            }
-          }, '-createTime -updateTime -isDelete')
+        let result = {}
+
+        let params = {
+          isDelete: {
+            $ne: true
+          }
+        }
+
+        let {
+          skip = 0, limit = 0
+        } = ctx.query
+        skip = Number(skip)
+        limit = Number(limit)
+
+        const list = await ctx.model.Project.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
           .populate({
             path: 'departments',
             select: {
@@ -32,7 +42,220 @@ module.exports = app => {
             }
           })
 
-        return list
+        const count = await ctx.model.Project.find(params).count()
+
+        result.count = count
+        result.list = list
+
+        if (limit) {
+          result.limit = limit
+          result.skip = skip
+        }
+
+        return result
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+    // 根据角色查询项目
+    async getListByRole() {
+      try {
+        const {
+          ctx
+        } = this
+
+        const role = ctx.userInfo.role
+
+        if (role === 1) {
+          return this.sqlFindProjectByUser(ctx.userInfo._id)
+        } else if (role === 2) {
+          return this.sqlFindProjectByDepartment(ctx.userInfo.department._id)
+        } else {
+          return this.sqlFindProjectAll()
+        }
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+    // 根据部门查询所有项目
+    async sqlFindProjectByDepartment(id) {
+      try {
+        const {
+          ctx
+        } = this
+
+        let result = {}
+
+        let params = {
+          isDelete: {
+            $ne: true
+          },
+          status: 1,
+          departments: app.mongoose.Types.ObjectId(id)
+        }
+
+        let {
+          skip = 0, limit = 0
+        } = ctx.query
+        skip = Number(skip)
+        limit = Number(limit)
+
+        const list = await ctx.model.Project.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
+          .populate({
+            path: 'departments',
+            select: {
+              name: 1,
+              count: 1,
+              _id: 1,
+            }
+          })
+          .populate({
+            path: 'missions',
+            select: '-isDelete -updateTime',
+            populate: {
+              path: 'user',
+              select: '-createTime -updateTime -isDelete -password -department -role'
+            }
+          })
+
+        const count = await ctx.model.Project.find(params).count()
+
+        result.count = count
+        result.list = list
+
+        if (limit) {
+          result.limit = limit
+          result.skip = skip
+        }
+
+        return result
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+    // 管理员查询所有项目
+    async sqlFindProjectAll() {
+      try {
+        const {
+          ctx
+        } = this
+
+        let result = {}
+
+        let params = {
+          isDelete: {
+            $ne: true
+          },
+          status: 1
+        }
+
+        let {
+          skip = 0, limit = 0
+        } = ctx.query
+        skip = Number(skip)
+        limit = Number(limit)
+
+        const list = await ctx.model.Project.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
+          .populate({
+            path: 'departments',
+            select: {
+              name: 1,
+              count: 1,
+              _id: 1,
+            }
+          })
+          .populate({
+            path: 'missions',
+            select: '-isDelete -updateTime',
+            populate: {
+              path: 'user',
+              select: '-createTime -updateTime -isDelete -password -department -role'
+            }
+          })
+
+        const count = await ctx.model.Project.find(params).count()
+
+        result.count = count
+        result.list = list
+
+        if (limit) {
+          result.limit = limit
+          result.skip = skip
+        }
+
+        return result
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+    // 获取单个用户所有的项目
+    async sqlFindProjectByUser(id) {
+      try {
+        const {
+          ctx
+        } = this
+
+
+        let result = {}
+
+        let params = {
+          isDelete: {
+            $ne: true
+          },
+          status: 1
+        }
+
+        let {
+          skip = 0, limit = 0
+        } = ctx.query
+        skip = Number(skip)
+        limit = Number(limit)
+
+        const list = await ctx.model.Project.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
+          .populate({
+            path: 'departments',
+            select: {
+              name: 1,
+              count: 1,
+              _id: 1,
+            }
+          })
+          .populate({
+            path: 'missions',
+            select: '-isDelete -updateTime',
+            populate: {
+              path: 'user',
+              select: '-createTime -updateTime -isDelete -password -department -role'
+            }
+          })
+
+        const count = await ctx.model.Project.find(params).count()
+
+        result.count = count
+        result.list = list
+
+        if (limit) {
+          result.limit = limit
+          result.skip = skip
+        }
+
+        return result
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
@@ -50,7 +273,9 @@ module.exports = app => {
           $push: {
             missions: app.mongoose.Types.ObjectId(mid)
           }
-        },{new: true})
+        }, {
+          new: true
+        })
 
         if (result) {
           await app.redis.set(`wb:project:${pid}`, JSON.stringify(result))
@@ -103,24 +328,24 @@ module.exports = app => {
       }
 
       const project = await this.ctx.model.Project.findOne({
-        _id: id
-      }, '-createTime -updateTime -isDelete')
-      .populate({
-        path: 'departments',
-        select: {
-          name: 1,
-          count: 1,
-          _id: 1,
-        }
-      })
-      .populate({
-        path: 'missions',
-        select: '-isDelete -updateTime',
-        populate: {
-          path: 'user',
-          select: '-createTime -updateTime -isDelete -password -department -role'
-        }
-      })
+          _id: id
+        }, '-createTime -updateTime -isDelete')
+        .populate({
+          path: 'departments',
+          select: {
+            name: 1,
+            count: 1,
+            _id: 1,
+          }
+        })
+        .populate({
+          path: 'missions',
+          select: '-isDelete -updateTime',
+          populate: {
+            path: 'user',
+            select: '-createTime -updateTime -isDelete -password -department -role'
+          }
+        })
 
       if (project) {
         await app.redis.set(`wb:project:${id}`, JSON.stringify(project))
@@ -204,7 +429,7 @@ module.exports = app => {
           params.deadline = deadline
         }
 
-        if (departments && departments.length === 0) {
+        if (departments && departments.length > 0) {
           params.departments = departments
         }
 

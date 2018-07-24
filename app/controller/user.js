@@ -38,15 +38,16 @@ module.exports = app => {
           username,
           nickname,
           role,
-          status,
-          department: {
-            _id: departmentId,
-            name: departmentName
-          } = {
-            _id: "",
-            name: ""
-          }
+          status
         } = ctx.userInfo
+
+        let departmentId = ''
+        let departmentName = ''
+
+        if (role !== 99) {
+          departmentId = ctx.userInfo.department?ctx.userInfo.department._id: ''
+          departmentName = ctx.userInfo.department?ctx.userInfo.department.name: ''
+        }
 
         ctx.success({
           data: {
@@ -110,7 +111,6 @@ module.exports = app => {
           status: HttpStatus.StatusNoContent
         })
       } catch (e) {
-        console.log(e)
          ctx.error({
           code: e.code
         })

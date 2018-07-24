@@ -5,14 +5,14 @@
  *  departmentName  部门名称
  *  date  日期
  *  dailyList  数组（每条日报）
- * dailyList.projectId 项目id
- * dailyList.projectName 项目名称
- * dailyList.missionId 任务id
- * dailyList.missionName  任务名称
- * dailyList.record 日报内容
- * dailyList.progress 任务进度
- * dailyList.eventId 日程id
- * dailyList.eventName 日程名称 （开会，面试等）
+ *  dailyList.projectId 项目id
+ *  dailyList.projectName 项目名称
+ *  dailyList.missionId 任务id
+ *  dailyList.missionName  任务名称
+ *  dailyList.record 日报内容
+ *  dailyList.progress 任务进度
+ *  dailyList.eventId 日程id
+ *  dailyList.eventName 日程名称 （开会，面试等）
  *  createTime 创建时间
  *  updateTIme 修改时间
  */

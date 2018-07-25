@@ -24,23 +24,7 @@ module.exports = app => {
         skip = Number(skip)
         limit = Number(limit)
 
-        const list = await ctx.model.Project.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
-          .populate({
-            path: 'departments',
-            select: {
-              name: 1,
-              count: 1,
-              _id: 1,
-            }
-          })
-          .populate({
-            path: 'missions',
-            select: '-isDelete -updateTime',
-            populate: {
-              path: 'user',
-              select: '-createTime -updateTime -isDelete -password -department -role'
-            }
-          })
+        const list = await this.findProjectList(params, skip, limit)
 
         const count = await ctx.model.Project.find(params).count()
 
@@ -85,6 +69,42 @@ module.exports = app => {
       }
     }
 
+    async findProjectList(params, skip, limit) {
+      try {
+        const {
+          ctx
+        } = this
+
+        const list = await ctx.model.Project.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
+          .populate({
+            path: 'departments',
+            select: {
+              name: 1,
+              count: 1,
+              _id: 1,
+            }
+          })
+          .populate({
+            path: 'missions',
+            select: '-isDelete -updateTime',
+            match: {
+              isDelete: false
+            },
+            populate: {
+              path: 'user',
+              select: '-createTime -updateTime -password -department -role'
+            }
+          })
+
+        return list
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
     // 根据部门查询所有项目
     async sqlFindProjectByDepartment(id) {
       try {
@@ -108,23 +128,7 @@ module.exports = app => {
         skip = Number(skip)
         limit = Number(limit)
 
-        const list = await ctx.model.Project.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
-          .populate({
-            path: 'departments',
-            select: {
-              name: 1,
-              count: 1,
-              _id: 1,
-            }
-          })
-          .populate({
-            path: 'missions',
-            select: '-isDelete -updateTime',
-            populate: {
-              path: 'user',
-              select: '-createTime -updateTime -isDelete -password -department -role'
-            }
-          })
+        const list = await this.findProjectList(params, skip, limit)
 
         const count = await ctx.model.Project.find(params).count()
 
@@ -167,23 +171,7 @@ module.exports = app => {
         skip = Number(skip)
         limit = Number(limit)
 
-        const list = await ctx.model.Project.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
-          .populate({
-            path: 'departments',
-            select: {
-              name: 1,
-              count: 1,
-              _id: 1,
-            }
-          })
-          .populate({
-            path: 'missions',
-            select: '-isDelete -updateTime',
-            populate: {
-              path: 'user',
-              select: '-createTime -updateTime -isDelete -password -department -role'
-            }
-          })
+        const list = await this.findProjectList(params, skip, limit)
 
         const count = await ctx.model.Project.find(params).count()
 
@@ -211,6 +199,12 @@ module.exports = app => {
           ctx
         } = this
 
+        // 查询出用户所有的正在进行中任务
+        const missionList = await ctx.model.Mission.find({
+          user: app.mongoose.Types.ObjectId(id)
+        }, '_id')
+
+        const myMissions = missionList.map(item => item._id)
 
         let result = {}
 
@@ -218,7 +212,10 @@ module.exports = app => {
           isDelete: {
             $ne: true
           },
-          status: 1
+          status: 1,
+          missions: {
+            $in: myMissions
+          }
         }
 
         let {
@@ -227,23 +224,7 @@ module.exports = app => {
         skip = Number(skip)
         limit = Number(limit)
 
-        const list = await ctx.model.Project.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
-          .populate({
-            path: 'departments',
-            select: {
-              name: 1,
-              count: 1,
-              _id: 1,
-            }
-          })
-          .populate({
-            path: 'missions',
-            select: '-isDelete -updateTime',
-            populate: {
-              path: 'user',
-              select: '-createTime -updateTime -isDelete -password -department -role'
-            }
-          })
+        const list = await this.findProjectList(params, skip, limit)
 
         const count = await ctx.model.Project.find(params).count()
 
@@ -343,7 +324,7 @@ module.exports = app => {
           select: '-isDelete -updateTime',
           populate: {
             path: 'user',
-            select: '-createTime -updateTime -isDelete -password -department -role'
+            select: '-createTime -updateTime -password -department -role'
           }
         })
 

@@ -3,7 +3,7 @@ const ResCode = require('../middleware/responseCode')
 const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
-  return class ProjectController extends app.Controller {
+  return class DailyController extends app.Controller {
     // 添加任务
     async add() {
       const { ctx } = this

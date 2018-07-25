@@ -5,10 +5,7 @@
  *  progress 任务进度
  *  description 任务描述
  *  deadline 截止时间
- *  users 参与任务的人员，子文档
- *  users.id 参与人员id
- *  users.day 预计天数
- *  users.isDelete 是否从任务中删除
+ *  user 参与人员id
  *  isDelete 是否已经删除
  *  createTime 创建时间
  *  updateTIme 修改时间
@@ -39,6 +36,10 @@ module.exports = app => {
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
+    },
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Project'
     },
     isDelete: {
       type: Boolean,

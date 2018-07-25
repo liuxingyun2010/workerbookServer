@@ -14,7 +14,7 @@ module.exports = app => {
           name,
           deadline,
           projectId,
-          uid
+          userId
         } = requestBody
 
 
@@ -30,7 +30,7 @@ module.exports = app => {
           })
         }
 
-        if (!ctx.helper.isObjectId(uid)) {
+        if (!ctx.helper.isObjectId(userId)) {
           return Promise.reject({
             code: ResCode.UserIdIlligal
           })
@@ -61,7 +61,8 @@ module.exports = app => {
         const missionResult = await ctx.model.Mission.create({
           name,
           deadline,
-          user: app.mongoose.Types.ObjectId(uid)
+          user: app.mongoose.Types.ObjectId(userId),
+          project: app.mongoose.Types.ObjectId(projectId)
         })
 
         if (missionResult) {
@@ -89,7 +90,7 @@ module.exports = app => {
           name,
           deadline,
           projectId,
-          uid
+          userId
         } = requestBody
 
         if (!name) {
@@ -104,7 +105,7 @@ module.exports = app => {
           })
         }
 
-        if (!ctx.helper.isObjectId(uid)) {
+        if (!ctx.helper.isObjectId(userId)) {
           return Promise.reject({
             code: ResCode.UserIdIlligal
           })
@@ -139,7 +140,7 @@ module.exports = app => {
           $set: {
             name,
             deadline,
-            uid
+            userId
           }
         })
       } catch (e) {
@@ -179,6 +180,90 @@ module.exports = app => {
           })
         }
 
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+
+    // 查询单个任务，包含项目和个人信息
+    async findOne() {
+      try {
+        const {
+          ctx
+        } = this
+        const id = ctx.params.id
+
+        if (!this.ctx.helper.isObjectId(id)) {
+          return Promise.reject({
+            code: ResCode.MissionIdError
+          })
+        }
+
+        // 找到并且更新
+        let result = await ctx.model.Mission.findOne({
+          _id: id,
+          isDelete: false
+        }).populate({
+          path: 'user',
+          select: '-updateTime -username -password'
+        }).populate({
+          path: 'project',
+          select: '-missions -isDelete -updateTime'
+        })
+
+        return result
+
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+    // 获取用户的任务列表
+    async findMissions() {
+      try {
+        const {
+          ctx
+        } = this
+        let { skip = 0, limit = 0, userId } = ctx.query
+        if (!userId) {
+          userId = ctx.userInfo._id
+        }
+
+        let result = {}
+
+        let params = {
+          isDelete: false,
+          status: 1,
+          user: app.mongoose.Types.ObjectId(userId)
+        }
+
+
+        skip = Number(skip)
+        limit = Number(limit)
+
+        const list = await ctx.model.Mission.find(params, '-updateTime -isDelete').skip(skip).limit(limit).populate({
+          path: 'project',
+          select: '-missions -isDelete -updateTime'
+        })
+
+        const count = await ctx.model.Mission.find(params).count()
+
+        result.count = count
+        result.list = list
+
+        if (limit) {
+          result.limit = limit
+          result.skip = skip
+        }
+
+        return result
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,

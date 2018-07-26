@@ -2,43 +2,52 @@ const ResCode = require('../middleware/responseCode')
 const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
-  class ProjectService extends app.Service {
+  class DailytService extends app.Service {
     // 添加任务
     async save() {
       try {
-        const {
-          ctx
-        } = this
+        const { ctx } = this
+        const userInfo = ctx.userInfo
+
+        const userId = userInfo._id
+        const departmentId = userInfo.department? userInfo.department._id : ''
+        const departmentName = userInfo.department? userInfo.department.name : ''
+
         const requestBody = ctx.request.body
+
         const {
-          name,
-          deadline,
-          projectId,
-          userId
+          record,
+          progress,
+          missionId,
+          eventId
         } = requestBody
 
+        let projectId
+        let projectName
+        let eventName
 
-        if (!name) {
+
+        if (!record) {
           return Promise.reject({
-            code: ResCode.MissionNameEmpty
+            code: ResCode.DailyRecordEmpty
           })
         }
 
-        if (!ctx.helper.isObjectId(projectId)) {
+        if (!ctx.helper.isObjectId(missionId)) {
           return Promise.reject({
             code: ResCode.MissionProjectIdError
           })
         }
 
-        if (!ctx.helper.isObjectId(userId)) {
+        if (!eventId && !ctx.helper.isObjectId(eventId)) {
           return Promise.reject({
-            code: ResCode.UserIdIlligal
+            code: ResCode.EventIdError
           })
         }
 
-        if (!deadline) {
+        if (!progress) {
           return Promise.reject({
-            code: ResCode.MissionDeadlineEmpty
+            code: ResCode.DailyProgressEmpty
           })
         }
 
@@ -272,5 +281,5 @@ module.exports = app => {
       }
     }
   }
-  return ProjectService
+  return DailytService
 }

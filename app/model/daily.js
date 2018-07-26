@@ -34,10 +34,6 @@ module.exports = app => {
       type: String,
       required: true
     },
-    date: {
-      type: Date,
-      required: true
-    },
     dailyList: [{
       projectId: {
         type: String,

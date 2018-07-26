@@ -168,6 +168,25 @@ const Mission = {
   }
 }
 
+// 任务
+const Daily = {
+  DailyRecordEmpty: {
+    resCode: '500001',
+    resMsg: '日报内容不能为空'
+  },
+  DailyProgressEmpty: {
+    resCode: '500002',
+    resMsg: '日报内容不能为空'
+  }
+}
+
+// 日程
+const Event = {
+  EventIdError: {
+    resCode: '600001',
+    resMsg: '日程id不正确'
+  },
+}
 
 // 权限
 const Auth = {
@@ -190,7 +209,9 @@ const ResponseCode = {
   ...Department,
   ...Auth,
   ...Project,
-  ...Mission
+  ...Mission,
+  ...Event,
+  ...Daily
 }
 
 module.exports = ResponseCode

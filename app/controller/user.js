@@ -74,12 +74,6 @@ module.exports = app => {
     async add() {
       const { ctx } = this
       try {
-        // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
 
         await ctx.service.user.insertUser()
 
@@ -98,13 +92,6 @@ module.exports = app => {
     async edit() {
       const { ctx } = this
       try {
-        // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
         await ctx.service.user.updateUser()
 
         ctx.success({
@@ -121,13 +108,6 @@ module.exports = app => {
     async delete() {
       const { ctx } = this
       try {
-        // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
         await ctx.service.user.deleteUser()
 
         ctx.success({
@@ -228,13 +208,6 @@ module.exports = app => {
     async editPwd() {
       const { ctx } = this
       try {
-        // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
         await ctx.service.user.updatePwd()
 
         ctx.success({
@@ -252,13 +225,6 @@ module.exports = app => {
     async resetPwd() {
       const { ctx } = this
       try {
-        // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
         await ctx.service.user.resetPassword()
 
         ctx.success({

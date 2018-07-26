@@ -4,18 +4,11 @@ const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
   return class DailyController extends app.Controller {
-    // 添加任务
+    // 添加日报
     async add() {
       const { ctx } = this
       try {
-        // 不是管理员和了leader不允许操作
-        if (ctx.userInfo.role !== 99 && ctx.userInfo.role !== 2) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
-        await ctx.service.mission.save()
+        await ctx.service.daily.save()
 
         ctx.success({
           status: HttpStatus.StatusCreated

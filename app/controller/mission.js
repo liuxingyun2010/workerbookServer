@@ -8,13 +8,6 @@ module.exports = app => {
     async add() {
       const { ctx } = this
       try {
-        // 不是管理员和了leader不允许操作
-        if (ctx.userInfo.role !== 99 && ctx.userInfo.role !== 2) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
         await ctx.service.mission.save()
 
         ctx.success({
@@ -32,12 +25,6 @@ module.exports = app => {
     async update() {
       const { ctx } = this
       try {
-        // 不是管理员和了leader不允许操作
-        if (ctx.userInfo.role !== 99 && ctx.userInfo.role !== 2) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
 
         await ctx.service.mission.update()
 
@@ -56,13 +43,6 @@ module.exports = app => {
     async delete() {
       const { ctx } = this
       try {
-        // 不是管理员和了leader不允许操作
-        if (ctx.userInfo.role !== 99 && ctx.userInfo.role !== 2) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
         await ctx.service.mission.delete()
 
         ctx.success({

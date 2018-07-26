@@ -64,13 +64,6 @@ module.exports = app => {
     async add() {
       const { ctx } = this
       try {
-        // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
 
         await ctx.service.department.save()
 
@@ -89,13 +82,6 @@ module.exports = app => {
     async update() {
       const { ctx } = this
       try {
-        // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
         await ctx.service.department.update()
 
         ctx.success({
@@ -113,13 +99,6 @@ module.exports = app => {
     async delete() {
       const { ctx } = this
       try {
-       // 不是管理员不允许操作
-        if (ctx.userInfo.role !== 99) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
         await ctx.service.department.delete()
 
         ctx.success({

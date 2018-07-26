@@ -41,6 +41,10 @@ module.exports = app => {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Project'
     },
+    event: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Event'
+    },
     isDelete: {
       type: Boolean,
       default: false

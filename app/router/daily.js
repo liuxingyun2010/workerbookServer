@@ -1,7 +1,7 @@
 const checkJwt = require('../middleware/checkJwt')
 
 module.exports = app => {
-  app.post(`/daily/add`, app.jwt, checkJwt(), 'daily.add')
+  app.post(`/dailies/`, app.jwt, checkJwt(), 'daily.add')
   // app.get(`/users/profile`, app.jwt, checkJwt(), 'user.profile')
   // app.get(`/users/`, app.jwt, 'user.list')
   // app.post(`${prefix}/users/`, app.jwt, checkJwt(), auth([99]), 'user.add')

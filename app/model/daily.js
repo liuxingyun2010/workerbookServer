@@ -22,7 +22,7 @@ module.exports = app => {
   mongoose.Promise = global.Promise
 
   const DailySchema = new mongoose.Schema(Object.assign({}, {
-    uid: {
+    userId: {
       type: String,
       required: true
     },

@@ -9,7 +9,8 @@
     "egg-mongoose": "^3.1.0",
     "egg-redis": "^2.0.0",
     "egg-scripts": "^2.5.0",
-    "md5": "^2.2.1"
+    "md5": "^2.2.1",
+    "moment": "^2.22.2"
   },
   "devDependencies": {
     "autod": "^3.0.1",

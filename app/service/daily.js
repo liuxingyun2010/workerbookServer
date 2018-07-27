@@ -1,5 +1,6 @@
 const ResCode = require('../middleware/responseCode')
 const HttpStatus = require('../middleware/httpStatus')
+const moment = require('moment')
 
 module.exports = app => {
   class DailytService extends app.Service {
@@ -25,6 +26,7 @@ module.exports = app => {
         let projectId
         let projectName
         let eventName
+        let missionName
 
 
         if (!record) {
@@ -33,52 +35,157 @@ module.exports = app => {
           })
         }
 
-        if (!ctx.helper.isObjectId(missionId)) {
+        if (missionId && !ctx.helper.isObjectId(missionId)) {
           return Promise.reject({
-            code: ResCode.MissionProjectIdError
+            code: ResCode.MissionIdError
           })
         }
 
-        if (!eventId && !ctx.helper.isObjectId(eventId)) {
+        if (eventId && !ctx.helper.isObjectId(eventId)) {
           return Promise.reject({
             code: ResCode.EventIdError
           })
         }
 
-        if (!progress) {
+        if (missionId && !progress) {
           return Promise.reject({
             code: ResCode.DailyProgressEmpty
           })
         }
 
-        // 判断项目是否存在
-        const projectInfo = await ctx.service.project.findProjectById(projectId)
-
-        if (!projectInfo) {
+        if (progress && !ctx.helper.isInt(progress) && progress <=100) {
           return Promise.reject({
-            code: ResCode.MissionProjectDontExist
+            code: ResCode.DailyProgressIlligeal
           })
         }
 
-        // 如果项目存在，则需要判断任务的截止时间不能大于项目的截止时间
-        if (new Date(projectInfo.deadline) < new Date(deadline)) {
+        // 任务id和eventid不能同时存在
+        if (eventId && missionId) {
           return Promise.reject({
-            code: ResCode.MissionDeadlineError
+            code: ResCode.DailyEventAndMissionTogather
           })
         }
 
-        const missionResult = await ctx.model.Mission.create({
-          name,
-          deadline,
-          user: app.mongoose.Types.ObjectId(userId),
-          project: app.mongoose.Types.ObjectId(projectId)
-        })
+        // 任务id和eventid不能同时为空
+        if (!eventId && !missionId) {
+          return Promise.reject({
+            code: ResCode.DailyEventAndMissionAllEmpty
+          })
+        }
 
-        if (missionResult) {
-          const missionId = missionResult._id
-          await ctx.service.project.addMission(projectId, missionId)
+        if (missionId) {
+          const missionInfo = await ctx.service.mission.findOneById(missionId)
+          // 任务是否存在
+          if (!missionInfo) {
+            return Promise.reject({
+              code: ResCode.MissionNotFount
+            })
+          }
+
+          const missionByUserId = missionInfo.user ? missionInfo.user._id: ''
+
+          // 如果该任务不属于此用户，则不允许添加
+          if (!missionByUserId || userId !== missionByUserId) {
+            return Promise.reject({
+              code: ResCode.DailyStatusUnauthorized
+            })
+          }
+
+          const projectInfo = missionInfo.project
+          projectId = projectInfo? projectInfo._id : ''
+          projectName = projectInfo? projectInfo.name: ''
+          missionName = missionInfo.name
+
+          // 判断项目是否存在
+          const projectResult = await ctx.service.project.findProjectById(projectId)
+
+          if (!projectResult) {
+            return Promise.reject({
+              code: ResCode.MissionProjectDontExist
+            })
+          }
+        }
+
+
+        if (eventId) {
+          const eventInfo = await ctx.service.event.findOneById(eventId)
+
+           // 任务是否存在
+          if (!eventInfo) {
+            return Promise.reject({
+              code: ResCode.EventNotFount
+            })
+          }
+
+          eventName = eventInfo? eventInfo.name: ''
+        }
+
+        // 根据当前时间判断判断此用户今天是否有写日报，如果写了则修改，否则创建
+        const before = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59')
+        const after = moment().add(1, 'day').format('YYYY-MM-DD 00:00:00')
+        const sql = {
+           userId,
+          '$and': [{
+            'createTime': {
+              '$gt': before
+            }
+          },{
+            'createTime': {
+              '$lt': after
+            }
+          }]
+        }
+
+        const findTodayDaily = await ctx.model.Daily.findOne(sql)
+
+        if (findTodayDaily) {
+          // 批量更新所有进度
+          await ctx.model.Daily.update(sql, {
+            $set: {
+              dailyList: {
+                progress
+              }
+            }
+          }, {
+            mutil: true
+          })
+
+          // 添加新的记录
+          await ctx.model.Daily.update({
+            userId,
+            dailyList: {
+              $push: {
+                projectId,
+                projectName,
+                missionName,
+                missionId,
+                record,
+                progress,
+                eventId,
+                eventName
+              }
+            }
+          })
+        }
+        else {
+          await ctx.model.Daily.create({
+            userId,
+            departmentId,
+            departmentName,
+            dailyList:[{
+              projectId,
+              projectName,
+              missionName,
+              missionId,
+              record,
+              progress,
+              eventId,
+              eventName
+            }]
+          })
         }
       } catch (e) {
+        console.log(e)
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError

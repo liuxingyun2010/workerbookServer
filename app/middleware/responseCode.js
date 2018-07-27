@@ -176,7 +176,23 @@ const Daily = {
   },
   DailyProgressEmpty: {
     resCode: '500002',
-    resMsg: '日报内容不能为空'
+    resMsg: '任务进度不能为空'
+  },
+  DailyEventAndMissionTogather: {
+    resCode: '500003',
+    resMsg: '任务和日程不能同时存在'
+  },
+  DailyEventAndMissionAllEmpty: {
+    resCode: '500005',
+    resMsg: '任务和日程不能同时为空'
+  },
+  DailyProgressIlligeal: {
+    resCode: '500004',
+    resMsg: '进度必须是0-100之间的整数'
+  },
+  DailyStatusUnauthorized: {
+    resCode: '500006',
+    resMsg: '此任务不属于当前用户，无法操作'
   }
 }
 
@@ -185,6 +201,18 @@ const Event = {
   EventIdError: {
     resCode: '600001',
     resMsg: '日程id不正确'
+  },
+  EventNameExist: {
+    resCode: '600002',
+    resMsg: '日程已存在'
+  },
+  EventNameEmpty: {
+    resCode: '600003',
+    resMsg: '日程名称不能为空'
+  },
+  EventNotFount: {
+    resCode: '600004',
+    resMsg: '日程未找到'
   },
 }
 
@@ -211,7 +239,8 @@ const ResponseCode = {
   ...Project,
   ...Mission,
   ...Event,
-  ...Daily
+  ...Daily,
+  ...Event
 }
 
 module.exports = ResponseCode

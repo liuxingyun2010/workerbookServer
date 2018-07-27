@@ -2,6 +2,7 @@
  *  日程表字段
  *  name   日程名称
  *  status  日程状态   1.正常  2.归档
+ *  isDelete 是否删除
  *  createTime 创建时间
  *  updateTIme 修改时间
  */
@@ -19,6 +20,10 @@ module.exports = app => {
       type: Number,
       default: 1
     },
+    isDelete: {
+      type: Boolean,
+      default: false
+    },
     createTime: {
       type: Date,
       default: Date.now
@@ -35,5 +40,5 @@ module.exports = app => {
     }
   })
 
-  return mongoose.model('Events', EventsSchema)
+  return mongoose.model('Event', EventsSchema)
 }

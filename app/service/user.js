@@ -180,7 +180,7 @@ module.exports = app => {
 
         const userInfo = await ctx.model.User.create({
           username,
-          password,
+          password: md5(password),
           nickname,
           department: app.mongoose.Types.ObjectId(departmentId),
           mobile,

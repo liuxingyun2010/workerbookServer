@@ -197,23 +197,7 @@ module.exports = app => {
         } = this
         const id = ctx.params.id
 
-        if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.MissionIdError
-          })
-        }
-
-        // 找到并且更新
-        let result = await ctx.model.Mission.findOne({
-          _id: id,
-          isDelete: false
-        }).populate({
-          path: 'user',
-          select: '-updateTime -username -password'
-        }).populate({
-          path: 'project',
-          select: '-missions -isDelete -updateTime'
-        })
+        let result = await this.findOneById(id)
 
         return result
 
@@ -225,13 +209,50 @@ module.exports = app => {
       }
     }
 
+
+    // 查找任务，通过任务id
+    async findOneById(id) {
+      if (!this.ctx.helper.isObjectId(id)) {
+        return Promise.reject({
+          code: ResCode.MissionIdError
+        })
+      }
+
+      const result = await app.redis.get(`wb:mission:${id}`)
+      if (result) {
+        return JSON.parse(result)
+      }
+
+
+      let info = await this.ctx.model.Mission.findOne({
+        _id: id,
+        isDelete: false
+      }).populate({
+        path: 'user',
+        select: '-updateTime -username -password'
+      }).populate({
+        path: 'project',
+        select: '-missions -isDelete -updateTime'
+      }).populate({
+        path: 'event'
+      })
+
+      if (info) {
+        await app.redis.set(`wb:mission:${id}`, JSON.stringify(info))
+      }
+
+      return info
+    }
+
     // 获取用户的任务列表
     async findMissions() {
       try {
         const {
           ctx
         } = this
-        let { skip = 0, limit = 0, userId } = ctx.query
+        let {
+          skip = 0, limit = 0, userId
+        } = ctx.query
         if (!userId) {
           userId = ctx.userInfo._id
         }

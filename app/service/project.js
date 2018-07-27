@@ -78,6 +78,9 @@ module.exports = app => {
         const list = await ctx.model.Project.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
           .populate({
             path: 'departments',
+            match: {
+              isDelete: false
+            },
             select: {
               name: 1,
               count: 1,
@@ -254,12 +257,10 @@ module.exports = app => {
           $push: {
             missions: app.mongoose.Types.ObjectId(mid)
           }
-        }, {
-          new: true
         })
 
         if (result) {
-          await app.redis.set(`wb:project:${pid}`, JSON.stringify(result))
+          await app.redis.del(`wb:project:${pid}`)
         }
       } catch (e) {
         return Promise.reject({
@@ -416,6 +417,10 @@ module.exports = app => {
 
         if (weight) {
           params.weight = weight
+        }
+
+        if (description) {
+          params.description = description
         }
 
         // 找到并且更新

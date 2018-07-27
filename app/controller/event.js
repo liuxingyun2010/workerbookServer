@@ -3,12 +3,12 @@ const ResCode = require('../middleware/responseCode')
 const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
-  return class MissionController extends app.Controller {
+  return class EventController extends app.Controller {
     // 添加任务
     async add() {
       const { ctx } = this
       try {
-        await ctx.service.mission.save()
+        await ctx.service.event.save()
 
         ctx.success({
           status: HttpStatus.StatusCreated
@@ -26,7 +26,7 @@ module.exports = app => {
       const { ctx } = this
       try {
 
-        await ctx.service.mission.update()
+        await ctx.service.event.update()
 
         ctx.success({
           status: HttpStatus.StatusNoContent
@@ -43,7 +43,7 @@ module.exports = app => {
     async delete() {
       const { ctx } = this
       try {
-        await ctx.service.mission.delete()
+        await ctx.service.event.delete()
 
         ctx.success({
           status: HttpStatus.StatusNoContent
@@ -61,7 +61,7 @@ module.exports = app => {
       const { ctx } = this
       try {
 
-        const result = await ctx.service.mission.findOne()
+        const result = await ctx.service.event.findOne()
 
         ctx.success({
           data: result
@@ -76,11 +76,11 @@ module.exports = app => {
 
 
     // 我的任务列表
-    async myMissions() {
+    async list() {
       const { ctx } = this
       try {
 
-        const result = await ctx.service.mission.findMissions()
+        const result = await ctx.service.event.findEvents()
 
         ctx.success({
           data: result

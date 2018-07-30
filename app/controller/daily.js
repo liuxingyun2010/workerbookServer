@@ -56,32 +56,11 @@ module.exports = app => {
       }
     }
 
-
-    async one() {
-      const { ctx } = this
-      try {
-
-        const result = await ctx.service.mission.findOne()
-
-        ctx.success({
-          data: result
-        })
-      }
-      catch (e) {
-        ctx.error({
-          code: e.code
-        })
-      }
-    }
-
-
     // 我的任务列表
-    async myMissions() {
+    async list() {
       const { ctx } = this
       try {
-
-        const result = await ctx.service.mission.findMissions()
-
+        const result = await ctx.service.daily.getList()
         ctx.success({
           data: result
         })

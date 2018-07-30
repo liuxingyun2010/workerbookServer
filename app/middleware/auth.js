@@ -2,7 +2,6 @@ const HttpStatus = require('./httpStatus')
 
 module.exports = roles => {
   return async function response(ctx, next) {
-    console.log(roles)
     if (!roles || roles.length === 0) {
       return await next()
     }

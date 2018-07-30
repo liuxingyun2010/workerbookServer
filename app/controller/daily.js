@@ -21,18 +21,11 @@ module.exports = app => {
       }
     }
 
-    // 更新任务
+    // 更新日报
     async update() {
       const { ctx } = this
       try {
-        // 不是管理员和了leader不允许操作
-        if (ctx.userInfo.role !== 99 && ctx.userInfo.role !== 2) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
-
-        await ctx.service.mission.update()
+        await ctx.service.daily.update()
 
         ctx.success({
           status: HttpStatus.StatusNoContent
@@ -45,18 +38,12 @@ module.exports = app => {
       }
     }
 
-    // 删除任务
+    // 删除日报
     async delete() {
       const { ctx } = this
       try {
-        // 不是管理员和了leader不允许操作
-        if (ctx.userInfo.role !== 99 && ctx.userInfo.role !== 2) {
-          return ctx.error({
-            status: HttpStatus.StatusForbidden
-          })
-        }
 
-        await ctx.service.mission.delete()
+        await ctx.service.daily.delete()
 
         ctx.success({
           status: HttpStatus.StatusNoContent

@@ -4,15 +4,17 @@ const moment = require('moment')
 
 module.exports = app => {
   class DailytService extends app.Service {
-    // 添加任务
+    // 添加日报
     async save() {
       try {
-        const { ctx } = this
+        const {
+          ctx
+        } = this
         const userInfo = ctx.userInfo
 
         const userId = userInfo._id
-        const departmentId = userInfo.department? userInfo.department._id : ''
-        const departmentName = userInfo.department? userInfo.department.name : ''
+        const departmentId = userInfo.department ? userInfo.department._id : ''
+        const departmentName = userInfo.department ? userInfo.department.name : ''
 
         const requestBody = ctx.request.body
 
@@ -53,7 +55,7 @@ module.exports = app => {
           })
         }
 
-        if (progress && !ctx.helper.isInt(progress) && progress <=100) {
+        if (progress && !ctx.helper.isInt(progress) && progress <= 100) {
           return Promise.reject({
             code: ResCode.DailyProgressIlligeal
           })
@@ -82,7 +84,7 @@ module.exports = app => {
             })
           }
 
-          const missionByUserId = missionInfo.user ? missionInfo.user._id: ''
+          const missionByUserId = missionInfo.user ? missionInfo.user._id : ''
 
           // 如果该任务不属于此用户，则不允许添加
           if (!missionByUserId || userId !== missionByUserId) {
@@ -92,8 +94,8 @@ module.exports = app => {
           }
 
           const projectInfo = missionInfo.project
-          projectId = projectInfo? projectInfo._id : ''
-          projectName = projectInfo? projectInfo.name: ''
+          projectId = projectInfo ? projectInfo._id : ''
+          projectName = projectInfo ? projectInfo.name : ''
           missionName = missionInfo.name
 
           // 判断项目是否存在
@@ -110,26 +112,26 @@ module.exports = app => {
         if (eventId) {
           const eventInfo = await ctx.service.event.findOneById(eventId)
 
-           // 任务是否存在
+          // 任务是否存在
           if (!eventInfo) {
             return Promise.reject({
               code: ResCode.EventNotFount
             })
           }
 
-          eventName = eventInfo? eventInfo.name: ''
+          eventName = eventInfo ? eventInfo.name : ''
         }
 
         // 根据当前时间判断判断此用户今天是否有写日报，如果写了则修改，否则创建
         const before = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59')
         const after = moment().add(1, 'day').format('YYYY-MM-DD 00:00:00')
         const sql = {
-           userId,
+          userId,
           '$and': [{
             'createTime': {
               '$gt': before
             }
-          },{
+          }, {
             'createTime': {
               '$lt': after
             }
@@ -139,22 +141,20 @@ module.exports = app => {
         const findTodayDaily = await ctx.model.Daily.findOne(sql)
 
         if (findTodayDaily) {
-          // 批量更新所有进度
-          await ctx.model.Daily.update(sql, {
-            $set: {
-              dailyList: {
-                progress
+          const dailyList = findTodayDaily.dailyList
+          dailyList.forEach(async (item, index) => {
+            sql['dailyList._id'] = item._id
+            await ctx.model.Daily.update(sql, {
+              $set: {
+                'dailyList.$.progress': progress
               }
-            }
-          }, {
-            mutil: true
+            })
           })
 
           // 添加新的记录
-          await ctx.model.Daily.update({
-            userId,
-            dailyList: {
-              $push: {
+          await ctx.model.Daily.update(sql, {
+            $push: {
+              dailyList: {
                 projectId,
                 projectName,
                 missionName,
@@ -166,13 +166,12 @@ module.exports = app => {
               }
             }
           })
-        }
-        else {
+        } else {
           await ctx.model.Daily.create({
             userId,
             departmentId,
             departmentName,
-            dailyList:[{
+            dailyList: [{
               projectId,
               projectName,
               missionName,
@@ -184,8 +183,16 @@ module.exports = app => {
             }]
           })
         }
+
+        if (missionId) {
+          // 同步任务进度到任务列表
+          await ctx.service.mission.updateProgress({
+            progress,
+            missionId
+          })
+        }
+
       } catch (e) {
-        console.log(e)
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError
@@ -193,7 +200,7 @@ module.exports = app => {
       }
     }
 
-    // 更新任务
+    // 更新日报
     async update() {
       try {
         const {
@@ -203,60 +210,44 @@ module.exports = app => {
         const requestBody = ctx.request.body
 
         const {
-          name,
-          deadline,
-          projectId,
-          userId
+          record
         } = requestBody
 
-        if (!name) {
+        if (!record) {
           return Promise.reject({
-            code: ResCode.MissionNameEmpty
+            code: ResCode.DailyRecordEmpty
           })
         }
 
-        if (!ctx.helper.isObjectId(projectId)) {
+        if (!ctx.helper.isObjectId(id)) {
           return Promise.reject({
-            code: ResCode.MissionProjectIdError
+            code: ResCode.DailyRecordIdError
           })
         }
 
-        if (!ctx.helper.isObjectId(userId)) {
+        const daily = await ctx.model.Daily.findOne({
+          'dailyList._id': id
+        })
+
+        if (!daily) {
           return Promise.reject({
-            code: ResCode.UserIdIlligal
+            code: ResCode.DailyNotFount
           })
         }
 
-        if (!deadline) {
+        // 如果该任务不属于此用户，则不允许添加
+        if (ctx.userInfo._id !== daily.userId) {
           return Promise.reject({
-            code: ResCode.MissionDeadlineEmpty
-          })
-        }
-
-        // 判断项目是否存在
-        const projectInfo = await ctx.service.project.findProjectById(projectId)
-
-        if (!projectInfo) {
-          return Promise.reject({
-            code: ResCode.MissionProjectDontExist
-          })
-        }
-
-        // 如果项目存在，则需要判断任务的截止时间不能大于项目的截止时间
-        if (new Date(projectInfo.deadline) < new Date(deadline)) {
-          return Promise.reject({
-            code: ResCode.MissionDeadlineError
+            code: ResCode.DailyStatusUnauthorized
           })
         }
 
         // 找到并且更新
-        return await ctx.model.Mission.update({
-          _id: id
+        return await ctx.model.Daily.update({
+          'dailyList._id': id
         }, {
           $set: {
-            name,
-            deadline,
-            user: app.mongoose.Types.ObjectId(userId),
+            'dailyList.$.record': record
           }
         })
       } catch (e) {
@@ -275,26 +266,40 @@ module.exports = app => {
         } = this
         const id = ctx.params.id
 
-        if (!this.ctx.helper.isObjectId(id)) {
+        if (!ctx.helper.isObjectId(id)) {
           return Promise.reject({
-            code: ResCode.MissionIdError
+            code: ResCode.DailyRecordIdError
+          })
+        }
+
+        const daily = await ctx.model.Daily.findOne({
+          'dailyList._id': id
+        })
+
+        if (!daily) {
+          return Promise.reject({
+            code: ResCode.DailyNotFount
+          })
+        }
+        // 如果该任务不属于此用户，则不允许添加
+        if (ctx.userInfo._id !== daily.userId) {
+          return Promise.reject({
+            code: ResCode.DailyStatusUnauthorized
           })
         }
 
         // 找到并且更新
-        const result = await ctx.model.Mission.update({
-          _id: id
+        const result = await ctx.model.Daily.update({
+          'dailyList._id': id
         }, {
-          $set: {
-            isDelete: true
+          '$pull': {
+            'dailyList': {
+              _id: id
+            }
           }
         })
 
-        if (!result.n) {
-          return Promise.reject({
-            code: ResCode.MissionNotFount
-          })
-        }
+        //
 
       } catch (e) {
         return Promise.reject({
@@ -347,7 +352,9 @@ module.exports = app => {
         const {
           ctx
         } = this
-        let { skip = 0, limit = 0, userId } = ctx.query
+        let {
+          skip = 0, limit = 0, userId
+        } = ctx.query
         if (!userId) {
           userId = ctx.userInfo._id
         }

@@ -152,7 +152,7 @@ const Mission = {
   },
   MissionProjectDontExist: {
     resCode: '400006',
-    resMsg: '项目id不存在'
+    resMsg: '项目不存在'
   },
   MissionDeadlineError: {
     resCode: '400007',
@@ -193,6 +193,14 @@ const Daily = {
   DailyStatusUnauthorized: {
     resCode: '500006',
     resMsg: '此任务不属于当前用户，无法操作'
+  },
+  DailyRecordIdError: {
+    resCode: '500007',
+    resMsg: '日报id错误'
+  },
+  DailyNotFount: {
+    resCode: '500008',
+    resMsg: '日报不存在'
   }
 }
 

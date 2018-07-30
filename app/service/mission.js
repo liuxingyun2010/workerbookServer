@@ -77,6 +77,64 @@ module.exports = app => {
       }
     }
 
+    // 更新进度
+    async updateProgress(obj) {
+      try {
+        const {
+          ctx
+        } = this
+
+        const id = obj.missionId
+        const progress = obj.progress || 0
+
+
+        if (progress && !ctx.helper.isInt(progress) && progress <=100) {
+          return Promise.reject({
+            code: ResCode.DailyProgressIlligeal
+          })
+        }
+
+        let missionInfo = await this.findOneById(id)
+
+        if (!missionInfo) {
+          return Promise.reject({
+            code: ResCode.MissionNotFount
+          })
+        }
+
+        const projectId = missionInfo.project? missionInfo.project._id: ''
+
+        if (!projectId){
+          return Promise.reject({
+            code: ResCode.MissionProjectDontExist
+          })
+        }
+
+        // 判断项目是否存在
+        const projectInfo = await ctx.service.project.findProjectById(projectId)
+
+        if (!projectInfo) {
+          return Promise.reject({
+            code: ResCode.MissionProjectDontExist
+          })
+        }
+
+        // 找到并且更新
+        return await ctx.model.Mission.update({
+          _id: id
+        }, {
+          $set: {
+            progress
+          }
+        })
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
     // 更新任务
     async update() {
       try {
@@ -89,31 +147,42 @@ module.exports = app => {
         const {
           name,
           deadline,
-          projectId,
-          userId
+          userId,
         } = requestBody
 
-        if (!name) {
-          return Promise.reject({
-            code: ResCode.MissionNameEmpty
-          })
+        const sql = {}
+
+        if (name){
+          sql.name = name
         }
 
-        if (!ctx.helper.isObjectId(projectId)) {
-          return Promise.reject({
-            code: ResCode.MissionProjectIdError
-          })
+        if (deadline) {
+          sql.deadline = deadline
         }
 
-        if (!ctx.helper.isObjectId(userId)) {
+        if (userId && !ctx.helper.isObjectId(userId)) {
           return Promise.reject({
             code: ResCode.UserIdIlligal
           })
         }
 
-        if (!deadline) {
+        if (userId){
+          sql.user = app.mongoose.Types.ObjectId(userId)
+        }
+
+        let missionInfo = await this.findOneById(id)
+
+        if (!missionInfo) {
           return Promise.reject({
-            code: ResCode.MissionDeadlineEmpty
+            code: ResCode.MissionNotFount
+          })
+        }
+
+        const projectId = missionInfo.project? missionInfo.project._id: ''
+
+        if (!projectId){
+          return Promise.reject({
+            code: ResCode.MissionProjectDontExist
           })
         }
 
@@ -127,7 +196,7 @@ module.exports = app => {
         }
 
         // 如果项目存在，则需要判断任务的截止时间不能大于项目的截止时间
-        if (new Date(projectInfo.deadline) < new Date(deadline)) {
+        if (deadline && new Date(projectInfo.deadline) < new Date(deadline)) {
           return Promise.reject({
             code: ResCode.MissionDeadlineError
           })
@@ -137,13 +206,10 @@ module.exports = app => {
         return await ctx.model.Mission.update({
           _id: id
         }, {
-          $set: {
-            name,
-            deadline,
-            user: app.mongoose.Types.ObjectId(userId),
-          }
+          $set: sql
         })
       } catch (e) {
+        console.log(e)
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError

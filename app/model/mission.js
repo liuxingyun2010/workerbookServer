@@ -39,7 +39,7 @@ module.exports = app => {
     },
     department: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'Department'
     },
     project: {
       type: mongoose.Schema.Types.ObjectId,

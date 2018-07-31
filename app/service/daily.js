@@ -7,15 +7,11 @@ module.exports = app => {
     // 添加日报
     async save() {
       try {
-        const {
-          ctx,
-        } = this
+        const { ctx } = this
         const userInfo = ctx.userInfo
-
         const userId = userInfo._id
         const departmentId = userInfo.department ? userInfo.department._id : ''
         const departmentName = userInfo.department ? userInfo.department.name : ''
-
         const requestBody = ctx.request.body
 
         const {

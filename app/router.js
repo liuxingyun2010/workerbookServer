@@ -7,4 +7,5 @@ module.exports = app => {
   require('./router/mission')(app)
   require('./router/daily')(app)
   require('./router/event')(app)
+  require('./router/analysis')(app)
 }

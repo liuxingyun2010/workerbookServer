@@ -26,6 +26,10 @@ module.exports = app => {
       type: String,
       required: true
     },
+    nickname: {
+      type: String,
+      required: true
+    },
     departmentId: {
       type: String,
       required: true
@@ -33,6 +37,10 @@ module.exports = app => {
     departmentName: {
       type: String,
       required: true
+    },
+    date: {
+      type: String,
+      default: ''
     },
     dailyList: [{
       projectId: {
@@ -84,6 +92,9 @@ module.exports = app => {
       updatedAt: 'updateTime'
     }
   })
+
+
+  DailySchema.index({createTime: 1})
 
   return mongoose.model('Daily', DailySchema)
 }

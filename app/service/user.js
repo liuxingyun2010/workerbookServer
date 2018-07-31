@@ -382,7 +382,7 @@ module.exports = app => {
           }
         }
 
-        const count = await ctx.model.User.find(params).count()
+        const count = await ctx.model.User.find(params).skip(skip).limit(limit).count()
 
         // 查找用户并更新
         const list = await ctx.model.User.find(params, '-isDelete -updateTime -password').skip(skip).limit(limit).populate({

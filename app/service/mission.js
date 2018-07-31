@@ -42,6 +42,9 @@ module.exports = app => {
           })
         }
 
+        const userInfo = await ctx.service.user.findUserById(userId)
+        const departmentId = userInfo && userInfo.department && userInfo.department._id || ''
+
         // 判断项目是否存在
         const projectInfo = await ctx.service.project.findProjectById(projectId)
 
@@ -62,7 +65,8 @@ module.exports = app => {
           name,
           deadline,
           user: app.mongoose.Types.ObjectId(userId),
-          project: app.mongoose.Types.ObjectId(projectId)
+          project: app.mongoose.Types.ObjectId(projectId),
+          department: app.mongoose.Types.ObjectId(departmentId)
         })
 
         if (missionResult) {
@@ -340,7 +344,7 @@ module.exports = app => {
           select: '-missions -isDelete -updateTime'
         })
 
-        const count = await ctx.model.Mission.find(params).count()
+        const count = await ctx.model.Mission.find(params).skip(skip).limit(limit).count()
 
         result.count = count
         result.list = list

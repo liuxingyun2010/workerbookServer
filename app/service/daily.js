@@ -1,6 +1,6 @@
-const ResCode = require('../middleware/responseCode');
-const HttpStatus = require('../middleware/httpStatus');
-const moment = require('moment');
+const ResCode = require('../middleware/responseCode')
+const HttpStatus = require('../middleware/httpStatus')
+const moment = require('moment')
 
 module.exports = app => {
   class DailytService extends app.Service {
@@ -9,151 +9,142 @@ module.exports = app => {
       try {
         const {
           ctx,
-        } = this;
-        const userInfo = ctx.userInfo;
+        } = this
+        const userInfo = ctx.userInfo
 
-        const userId = userInfo._id;
-        const departmentId = userInfo.department ? userInfo.department._id : '';
-        const departmentName = userInfo.department ? userInfo.department.name : '';
+        const userId = userInfo._id
+        const departmentId = userInfo.department ? userInfo.department._id : ''
+        const departmentName = userInfo.department ? userInfo.department.name : ''
 
-        const requestBody = ctx.request.body;
+        const requestBody = ctx.request.body
 
         const {
           record,
           progress,
           missionId,
           eventId,
-        } = requestBody;
+        } = requestBody
 
-        let projectId;
-        let projectName;
-        let eventName;
-        let missionName;
+        let projectId
+        let projectName
+        let eventName
+        let missionName
 
 
         if (!record) {
           return Promise.reject({
             code: ResCode.DailyRecordEmpty,
-          });
+          })
         }
 
         if (missionId && !ctx.helper.isObjectId(missionId)) {
           return Promise.reject({
             code: ResCode.MissionIdError,
-          });
+          })
         }
 
         if (eventId && !ctx.helper.isObjectId(eventId)) {
           return Promise.reject({
             code: ResCode.EventIdError,
-          });
+          })
         }
 
         if (missionId && !progress) {
           return Promise.reject({
             code: ResCode.DailyProgressEmpty,
-          });
+          })
         }
 
         if (progress && !ctx.helper.isInt(progress) && progress <= 100) {
           return Promise.reject({
             code: ResCode.DailyProgressIlligeal,
-          });
+          })
         }
 
         // 任务id和eventid不能同时存在
         if (eventId && missionId) {
           return Promise.reject({
             code: ResCode.DailyEventAndMissionTogather,
-          });
+          })
         }
 
         // 任务id和eventid不能同时为空
         if (!eventId && !missionId) {
           return Promise.reject({
             code: ResCode.DailyEventAndMissionAllEmpty,
-          });
+          })
         }
 
         if (missionId) {
-          const missionInfo = await ctx.service.mission.findOneById(missionId);
+          const missionInfo = await ctx.service.mission.findOneById(missionId)
           // 任务是否存在
           if (!missionInfo) {
             return Promise.reject({
               code: ResCode.MissionNotFount,
-            });
+            })
           }
 
-          const missionByUserId = missionInfo.user ? missionInfo.user._id : '';
+          const missionByUserId = missionInfo.user ? missionInfo.user._id : ''
 
           // 如果该任务不属于此用户，则不允许添加
           if (!missionByUserId || userId !== missionByUserId) {
             return Promise.reject({
               code: ResCode.DailyStatusUnauthorized,
-            });
+            })
           }
 
-          const projectInfo = missionInfo.project;
-          projectId = projectInfo ? projectInfo._id : '';
-          projectName = projectInfo ? projectInfo.name : '';
-          missionName = missionInfo.name;
+          const projectInfo = missionInfo.project
+          projectId = projectInfo ? projectInfo._id : ''
+          projectName = projectInfo ? projectInfo.name : ''
+          missionName = missionInfo.name
 
           // 判断项目是否存在
-          const projectResult = await ctx.service.project.findProjectById(projectId);
+          const projectResult = await ctx.service.project.findProjectById(projectId)
 
           if (!projectResult) {
             return Promise.reject({
               code: ResCode.MissionProjectDontExist,
-            });
+            })
           }
         }
 
 
         if (eventId) {
-          const eventInfo = await ctx.service.event.findOneById(eventId);
+          const eventInfo = await ctx.service.event.findOneById(eventId)
 
           // 任务是否存在
           if (!eventInfo) {
             return Promise.reject({
               code: ResCode.EventNotFount,
-            });
+            })
           }
 
-          eventName = eventInfo ? eventInfo.name : '';
+          eventName = eventInfo ? eventInfo.name : ''
         }
 
         // 根据当前时间判断判断此用户今天是否有写日报，如果写了则修改，否则创建
-        const before = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');
-        const after = moment().add(1, 'day').format('YYYY-MM-DD 00:00:00');
-        console.log(before,after)
+        const date = moment().format('YYYY-MM-DD')
+
         const sql = {
           userId,
-          $and: [{
-            createTime: {
-              $gt: before,
-            },
-          }, {
-            createTime: {
-              $lt: after,
-            },
-          }],
-        };
+          date
+        }
 
-        const findTodayDaily = await ctx.model.Daily.findOne(sql);
+        const findTodayDaily = await ctx.model.Daily.findOne(sql)
 
         if (findTodayDaily) {
-          const dailyList = findTodayDaily.dailyList;
+          const dailyList = findTodayDaily.dailyList
           if (missionId) {
             dailyList.forEach(async (item, index) => {
               if (String(item.missionId) === String(missionId)) {
-                dailyList[index].progress = progress;
+                dailyList[index].progress = progress
               }
-            });
+            })
             await ctx.model.Daily.update(sql, {
               $set: {
                 dailyList,
               },
-            });
+            })
           }
 
           // 添加新的记录
@@ -170,12 +161,14 @@ module.exports = app => {
                 eventName,
               },
             },
-          });
+          })
         } else {
           await ctx.model.Daily.create({
             userId,
             departmentId,
             departmentName,
+            date,
+            nickname: ctx.userInfo.nickname ||'',
             dailyList: [{
               projectId,
               projectName,
@@ -186,7 +179,7 @@ module.exports = app => {
               eventId,
               eventName,
             }],
-          });
+          })
         }
 
         if (missionId) {
@@ -194,14 +187,14 @@ module.exports = app => {
           await ctx.service.mission.updateProgress({
             progress,
             missionId,
-          });
+          })
         }
 
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError,
-        });
+        })
       }
     }
 
@@ -210,41 +203,41 @@ module.exports = app => {
       try {
         const {
           ctx,
-        } = this;
-        const id = ctx.params.id;
-        const requestBody = ctx.request.body;
+        } = this
+        const id = ctx.params.id
+        const requestBody = ctx.request.body
 
         const {
           record,
-        } = requestBody;
+        } = requestBody
 
         if (!record) {
           return Promise.reject({
             code: ResCode.DailyRecordEmpty,
-          });
+          })
         }
 
         if (!ctx.helper.isObjectId(id)) {
           return Promise.reject({
             code: ResCode.DailyRecordIdError,
-          });
+          })
         }
 
         const daily = await ctx.model.Daily.findOne({
           'dailyList._id': id,
-        });
+        })
 
         if (!daily) {
           return Promise.reject({
             code: ResCode.DailyNotFount,
-          });
+          })
         }
 
         // 如果该任务不属于此用户，则不允许添加
         if (ctx.userInfo._id !== daily.userId) {
           return Promise.reject({
             code: ResCode.DailyStatusUnauthorized,
-          });
+          })
         }
 
         // 找到并且更新
@@ -254,12 +247,12 @@ module.exports = app => {
           $set: {
             'dailyList.$.record': record,
           },
-        });
+        })
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError,
-        });
+        })
       }
     }
 
@@ -268,38 +261,37 @@ module.exports = app => {
       try {
         const {
           ctx,
-        } = this;
-        const id = ctx.params.id;
+        } = this
+        const id = ctx.params.id
 
         if (!ctx.helper.isObjectId(id)) {
           return Promise.reject({
             code: ResCode.DailyRecordIdError,
-          });
+          })
         }
 
         const daily = await ctx.model.Daily.findOne({
           'dailyList._id': id,
-        });
+        })
 
         if (!daily) {
           return Promise.reject({
             code: ResCode.DailyNotFount,
-          });
+          })
         }
         // 如果该任务不属于此用户，则不允许添加
         if (ctx.userInfo._id !== daily.userId) {
           return Promise.reject({
             code: ResCode.DailyStatusUnauthorized,
-          });
+          })
         }
 
         // 找到当前的missionId
         const singleMission = daily.dailyList.find(item => {
-          return String(item._id) === id;
-        });
+          return String(item._id) === id
+        })
 
-        const missionId = singleMission ? singleMission.missionId : '';
-        console.log(missionId);
+        const missionId = singleMission ? singleMission.missionId : ''
 
         // 删除
         const result = await ctx.model.Daily.update({
@@ -310,42 +302,32 @@ module.exports = app => {
               _id: id,
             },
           },
-        });
+        })
 
         // 当前删除的是否是此任务在今天的最后一条数据，如果是，则需要把任务的进度更新到昨天
         if (missionId) {
-          console.log(missionId);
-          const before = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');
-          const after = moment().add(1, 'day').format('YYYY-MM-DD 00:00:00');
-          const userId = ctx.userInfo._id;
+          const date = moment().format('YYYY-MM-DD')
+          const userId = ctx.userInfo._id
           const sql = {
             userId,
-            $and: [{
-              createTime: {
-                $gt: before,
-              },
-            }, {
-              createTime: {
-                $lt: after,
-              },
-            }],
+            date,
             'dailyList.missionId': missionId,
-          };
-          const list = await ctx.model.Daily.findOne(sql);
+          }
+          const list = await ctx.model.Daily.findOne(sql)
 
           if (!list || list.dailyList.length === 0) {
           //  更新进度为昨天的进度
             await ctx.service.mission.updateProgress({
               missionId,
               progress: 100,
-            });
+            })
           }
         }
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError,
-        });
+        })
       }
     }
 
@@ -354,14 +336,14 @@ module.exports = app => {
       try {
         const {
           ctx,
-        } = this;
+        } = this
 
         let {
           skip = 0, limit = 0, userId, date, departmentId,
-        } = ctx.query;
+        } = ctx.query
 
-        skip = Number(skip);
-        limit = Number(limit);
+        skip = Number(skip)
+        limit = Number(limit)
 
         if (userId && !ctx.helper.isObjectId(userId)){
           return Promise.reject({
@@ -374,19 +356,11 @@ module.exports = app => {
           })
         }
 
-        let before = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');
-        let after = moment().add(1, 'day').format('YYYY-MM-DD 00:00:00');
+        const currentDate = date || moment().format('YYYY-MM-DD')
+
         const sql = {
-          $and: [{
-            createTime: {
-              $gt: before,
-            },
-          }, {
-            createTime: {
-              $lt: after,
-            },
-          }],
-        };
+          date: currentDate
+        }
 
         if (userId) {
           sql.userId = userId
@@ -396,32 +370,28 @@ module.exports = app => {
           sql.departmentId = departmentId
         }
 
-        const result = {};
+        const result = {}
         const list = await ctx.model.Daily.find(sql, '-updateTime').skip(skip).limit(limit)
-          // .populate({
-          //   path: 'project',
-          //   select: '-missions -isDelete -updateTime',
-          // });
 
-        const count = await ctx.model.Daily.find(sql).count();
 
-        result.count = count;
-        result.list = list;
+        const count = await ctx.model.Daily.find(sql).skip(skip).limit(limit).count()
+
+        result.count = count
+        result.list = list
 
         if (limit) {
-          result.limit = limit;
-          result.skip = skip;
+          result.limit = limit
+          result.skip = skip
         }
 
-        return result;
+        return result
       } catch (e) {
-        console.log(e)
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError,
-        });
+        })
       }
     }
   }
-  return DailytService;
-};
+  return DailytService
+}

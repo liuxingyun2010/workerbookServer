@@ -76,9 +76,7 @@ module.exports = app => {
           })
         }
 
-        const department = await this.findDepartment({
-          _id: id
-        })
+        const department = await this.findOneDepartmentByRedis(id)
 
         if (!department) {
           return Promise.reject({
@@ -94,6 +92,37 @@ module.exports = app => {
         })
       }
     }
+
+    async findOneDepartmentByRedis(id) {
+      try {
+        if (!this.ctx.helper.isObjectId(id)) {
+          return Promise.reject({
+            code: ResCode.DepartmentIdError
+          })
+        }
+
+        const department = await app.redis.get(`wb:department:${id}`)
+        if (department) {
+          return JSON.parse(department)
+        }
+
+        const findDepartment = await this.ctx.model.Department.findOne({
+          _id: id
+        })
+
+        if (findDepartment) {
+          await app.redis.set(`wb:user:${id}`, JSON.stringify(findDepartment))
+        }
+
+        return findDepartment
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
 
     // 查找单个部门
     async findDepartment(params) {
@@ -210,9 +239,7 @@ module.exports = app => {
         }
 
         // 查找部门，不能存在重名的名称
-        const departmentResult = await this.findDepartment({
-          _id: id
-        })
+        const departmentResult = await this.findOneDepartmentByRedis(id)
 
         if (!departmentResult) {
           return Promise.reject({

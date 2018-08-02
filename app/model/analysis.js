@@ -6,7 +6,7 @@
  *  departmentName 部门名称
  *  date 日期
  *  userId 用户id
- *  userName 用户名称
+ *  nickname 用户名称
  *  projectId 项目id
  *  projectName 项目名称
  *  missionProgress 任务进度
@@ -42,7 +42,7 @@ module.exports = app => {
       type: mongoose.Schema.Types.ObjectId,
       required: true
     },
-    userName: {
+    nickname: {
       type: String,
       required: true
     },
@@ -79,7 +79,7 @@ module.exports = app => {
       default: false
     },
     date: {
-      type: Date,
+      type: String,
       required: true
     },
     createTime: {
@@ -97,6 +97,8 @@ module.exports = app => {
       updatedAt: 'updateTime'
     }
   })
+
+  AnalysisSchema.index({date: 1})
 
   return mongoose.model('Analysis', AnalysisSchema)
 }

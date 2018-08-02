@@ -1,7 +1,7 @@
 /**
  *  任务表字段
  *  name   任务名称
- *  status  状态   1.正常  2.暂停， 3 归档
+ *  status  状态   1.正常  2 归档
  *  progress 任务进度
  *  description 任务描述
  *  deadline 截止时间

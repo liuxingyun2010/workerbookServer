@@ -1,4 +1,5 @@
 'use strict';
+const path = require('path')
 
 module.exports = appInfo => {
   const config = exports = {};
@@ -38,6 +39,10 @@ module.exports = appInfo => {
       db: 0
     }
   }
+
+  // 定时任务时间
+  // 每天凌晨
+  config.schedule = '0 0 23 * * *'
 
   return config;
 };

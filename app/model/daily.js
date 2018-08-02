@@ -94,7 +94,7 @@ module.exports = app => {
   })
 
 
-  DailySchema.index({createTime: 1})
+  DailySchema.index({date: 1})
 
   return mongoose.model('Daily', DailySchema)
 }

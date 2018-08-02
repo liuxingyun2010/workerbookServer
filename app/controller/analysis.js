@@ -54,6 +54,23 @@ module.exports = app => {
         })
       }
     }
+
+    // 部门中每个人的任务详情
+    async departmentUserAnalysis() {
+      const { ctx } = this
+      try {
+        const result = await ctx.service.analysis.findDepartmentUserAnalysis()
+
+        ctx.success({
+          data: result
+        })
+      }
+      catch (e) {
+        ctx.error({
+          code: e.code
+        })
+      }
+    }
   }
 }
 

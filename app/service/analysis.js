@@ -149,7 +149,86 @@ module.exports = app => {
 
     // 部门所有人每天的任务详情
     async findDepartmentUserAnalysis() {
+      try {
+        const {
+          ctx
+        } = this
 
+        let result = {}
+        let projects = []
+        const
+
+        const userList = await ctx.model.User.find({
+          isDelete: false,
+          status: 1,
+          department: id
+        })
+
+        userList.forEach((item, index) => {
+          const id = item._id
+          const nickname = item.nickname
+          if (!result[id]){
+            result[id] = {}
+            result[id].id = id
+            result[id].nickname = nickname
+            result[id].missions = []
+          }
+        })
+
+        let params = {
+          isDelete: {
+            $ne: true
+          },
+          status: 1
+        }
+
+        let {
+          skip = 0, limit = 0
+        } = ctx.query
+        skip = Number(skip)
+        limit = Number(limit)
+
+        const list = await ctx.model.Project.find(params, '-updateTime -isDelete -status -departments').skip(skip).limit(limit)
+
+        const count = await ctx.model.Project.find(params).skip(skip).limit(limit).count()
+
+        result.count = count
+
+        list.forEach(item => {
+          const now = new Date()
+
+          if (now > item.deadline) {
+            item._doc.isDelay = true
+          }
+          else {
+            item._doc.isDelay = false
+          }
+
+          const oneDay = 24*3600*1000
+
+          const totalDay = Math.ceil((item.deadline - item.createTime) / oneDay)
+          const costDay = Math.ceil((new Date() - item.createTime) / oneDay)
+
+          item._doc.costDay = costDay
+          item._doc.totalDay = totalDay
+
+          projects.push(item)
+        })
+
+        result.list = projects
+
+        if (limit) {
+          result.limit = limit
+          result.skip = skip
+        }
+
+        return result
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
     }
 
      // 获取项目统计列表

@@ -5,8 +5,8 @@ const moment = require('moment')
 module.exports = app => {
   return {
     schedule: {
-      // cron: app.config.schedule, // 每天凌晨
-      interval: '10s',
+      cron: app.config.schedule, // 每天凌晨
+      // interval: '10s',
       type: 'all', // 指定所有的 worker 都需要执行
     },
 

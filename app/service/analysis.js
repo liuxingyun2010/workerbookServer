@@ -153,11 +153,11 @@ module.exports = app => {
         const {
           ctx
         } = this
-
+        
+        const id = ctx.params.id
         let result = {}
-        let projects = []
-        const
-
+        let missions = {}
+        
         const userList = await ctx.model.User.find({
           isDelete: false,
           status: 1,
@@ -174,56 +174,38 @@ module.exports = app => {
             result[id].missions = []
           }
         })
-
-        let params = {
-          isDelete: {
-            $ne: true
-          },
-          status: 1
-        }
-
-        let {
-          skip = 0, limit = 0
-        } = ctx.query
-        skip = Number(skip)
-        limit = Number(limit)
-
-        const list = await ctx.model.Project.find(params, '-updateTime -isDelete -status -departments').skip(skip).limit(limit)
-
-        const count = await ctx.model.Project.find(params).skip(skip).limit(limit).count()
-
-        result.count = count
-
-        list.forEach(item => {
-          const now = new Date()
-
-          if (now > item.deadline) {
-            item._doc.isDelay = true
-          }
-          else {
-            item._doc.isDelay = false
+        
+        const missionsAnalysisList = await ctx.model.Analysis.find({
+          departmentId: id
+        }).sort({
+          createTime: -1
+        })
+        
+        missionsAnalysisList.forEach((item, index) => {
+          const userId = item.userId
+          const missionId = item.missionId
+          const dateInfo = {}
+          if (!missions[missionId]){
+            missions[missionId] = {}
+            missions[missionId].name = item.missionName
+            missions[missionId].id = item.missionId
+            missions[missionId].dates = []
           }
 
-          const oneDay = 24*3600*1000
+          dateInfo.date = item.date
+          dateInfo.progress = item.missionProgress
+          dateInfo.isDelay = item.missionDelay
+          missions[missionId].dates.push(dateInfo)
+            
 
-          const totalDay = Math.ceil((item.deadline - item.createTime) / oneDay)
-          const costDay = Math.ceil((new Date() - item.createTime) / oneDay)
-
-          item._doc.costDay = costDay
-          item._doc.totalDay = totalDay
-
-          projects.push(item)
+          result[userId].dates.push(dateInfo)
         })
 
-        result.list = projects
-
-        if (limit) {
-          result.limit = limit
-          result.skip = skip
-        }
+        // result[id].missions = missions
 
         return result
       } catch (e) {
+        console.log(e)
         return Promise.reject({
           code: ResCode.Error,
           status: HttpStatus.StatusInternalServerError

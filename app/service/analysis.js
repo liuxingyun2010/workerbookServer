@@ -66,6 +66,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -76,7 +77,7 @@ module.exports = app => {
       try {
         const { ctx } = this
         const id = ctx.params.id
-        const redisAnalysisDepartmentsDetail = await app.redis.get(`wb:analysis:departments:${id}`)
+        const redisAnalysisDepartmentsDetail = await app.redis.get(`wb:analysis:departments:summary:${id}`)
         if (redisAnalysisDepartmentsDetail){
           return JSON.parse(redisAnalysisDepartmentsDetail)
         }
@@ -142,6 +143,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -153,11 +155,17 @@ module.exports = app => {
         const {
           ctx
         } = this
-        
+
         const id = ctx.params.id
+
+        const redisAnalysisDepartmentsDetail = await app.redis.get(`wb:analysis:departments:detail:${id}`)
+        if (redisAnalysisDepartmentsDetail){
+          return JSON.parse(redisAnalysisDepartmentsDetail)
+        }
+
         let result = {}
         let missions = {}
-        
+
         const userList = await ctx.model.User.find({
           isDelete: false,
           status: 1,
@@ -172,42 +180,73 @@ module.exports = app => {
             result[id].id = id
             result[id].nickname = nickname
             result[id].missions = []
+            result[id].waitMissions = []
           }
         })
-        
+
         const missionsAnalysisList = await ctx.model.Analysis.find({
           departmentId: id
         }).sort({
-          createTime: -1
+          date: 1
         })
-        
+
         missionsAnalysisList.forEach((item, index) => {
           const userId = item.userId
           const missionId = item.missionId
           const dateInfo = {}
+
+          // 去重
+          if (missions[missionId] && missions[missionId].dates){
+            const index = missions[missionId].dates.findIndex(i => i.date === item.date)
+            if (index > -1) {
+              dateInfo.date = item.date
+              dateInfo.progress = item.missionProgress
+              dateInfo.isDelay = item.missionDelay
+              missions[missionId].dates.splice(index, 1, dateInfo)
+              return
+            }
+          }
+
           if (!missions[missionId]){
             missions[missionId] = {}
             missions[missionId].name = item.missionName
-            missions[missionId].id = item.missionId
+            missions[missionId].id = missionId
             missions[missionId].dates = []
+            missions[missionId].userId = userId
+            missions[missionId].deadline = item.missionDeadline
+            missions[missionId].projectId = item.projectId
+            missions[missionId].projectName = item.projectName
           }
 
           dateInfo.date = item.date
           dateInfo.progress = item.missionProgress
           dateInfo.isDelay = item.missionDelay
           missions[missionId].dates.push(dateInfo)
-            
-
-          result[userId].dates.push(dateInfo)
         })
 
-        // result[id].missions = missions
+        for (let key in missions){
+          const item = missions[key]
+          const userId = item.userId
+          const dates = item.dates
 
-        return result
+          // 说明未开始
+          if (dates[dates.length - 1].progress === 0) {
+            result[userId].waitMissions.push(item)
+          }
+          else{
+            result[userId].missions.push(item)
+          }
+        }
+
+        const list = Object.values(result)
+
+        await app.redis.set(`wb:analysis:departments:detail:${id}`, JSON.stringify(list), 'EX', 7200)
+
+        return list
       } catch (e) {
-        console.log(e)
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -236,7 +275,15 @@ module.exports = app => {
         skip = Number(skip)
         limit = Number(limit)
 
-        const list = await ctx.model.Project.find(params, '-updateTime -isDelete -status -departments').skip(skip).limit(limit)
+        const list = await ctx.model.Project.find(params, '-updateTime -isDelete -status -departments')
+          .populate({
+            path: 'missions',
+            select: {
+              _id:1,
+              name: 1,
+              deadline: 1
+            }
+          }).skip(skip).limit(limit)
 
         const count = await ctx.model.Project.find(params).skip(skip).limit(limit).count()
 
@@ -244,7 +291,7 @@ module.exports = app => {
 
         list.forEach(item => {
           const now = new Date()
-
+          const missions = item.missions
           if (now > item.deadline) {
             item._doc.isDelay = true
           }
@@ -260,6 +307,15 @@ module.exports = app => {
           item._doc.costDay = costDay
           item._doc.totalDay = totalDay
 
+          missions.forEach(doc => {
+            if (now > doc.deadline) {
+              doc._doc.isDelay = true
+            }
+            else {
+              doc._doc.isDelay = false
+            }
+          })
+
           projects.push(item)
         })
 
@@ -274,12 +330,11 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
     }
-
-
   }
 
 

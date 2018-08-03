@@ -15,9 +15,7 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code
-        })
+        ctx.error(e)
       }
     }
 
@@ -33,7 +31,8 @@ module.exports = app => {
       }
       catch (e) {
         ctx.error({
-          code: e.code
+          code: e.code,
+          error: e.error
         })
       }
     }
@@ -51,12 +50,13 @@ module.exports = app => {
       }
       catch (e) {
         ctx.error({
-          code: e.code
+          code: e.code,
+          error: e.error
         })
       }
     }
 
-    // 我的任务列表
+    // 日报列表
     async list() {
       const { ctx } = this
       try {
@@ -67,7 +67,25 @@ module.exports = app => {
       }
       catch (e) {
         ctx.error({
-          code: e.code
+          code: e.code,
+          error: e.error
+        })
+      }
+    }
+
+    // 我今天的日报
+    async today() {
+      const { ctx } = this
+      try {
+        const result = await ctx.service.daily.getMeToday()
+        ctx.success({
+          data: result
+        })
+      }
+      catch (e) {
+        ctx.error({
+          code: e.code,
+          error: e.error
         })
       }
     }

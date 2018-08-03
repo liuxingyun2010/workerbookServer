@@ -16,17 +16,30 @@ const HttpStatus = require('./httpStatus')
 
 module.exports = () => {
   return async function response(ctx, next) {
-    ctx.error = ({ code = ResCode.Error, status = HttpStatus.StatusOK } = { code: ResCode.Error, status: HttpStatus.StatusOK }) => {
+    ctx.error = ({ code = ResCode.Error, error = null, status = HttpStatus.StatusOK } = { code: ResCode.Error, error: null, status: HttpStatus.StatusOK }) => {
       const resCode = code.resCode
       const resMsg = code.resMsg
-      ctx.body = { resCode, resMsg }
+      ctx.body = {
+        msg:resMsg,
+        code:resCode
+      }
+
+      ctx.logger.info(`\n响应日志.${ctx.request.requestId}>>>>>>>>>>>>>>>>>>\n${error && error.stack? error.stack: resMsg}\n`)
+
       ctx.status = status
     }
 
     ctx.success = ({ data = null, code = ResCode.Success, status = HttpStatus.StatusOK} = { data: null, resCode: ResCode.Success, status: HttpStatus.StatusOK }) => {
       const resCode = code.resCode
       const resMsg = code.resMsg
-      ctx.body = { data, resMsg, resCode }
+      ctx.body = {
+        data,
+        msg:resMsg,
+        code:resCode
+      }
+
+      // ctx.logger.info(`响应日志.${ctx.request.requestId}>>>>>>>>>>>>>>>>>>${JSON.stringify(ctx.body)}`)
+
       ctx.status = status
     }
 

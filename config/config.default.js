@@ -8,7 +8,7 @@ module.exports = appInfo => {
   config.keys = appInfo.name + '_1530774923245_3881';
 
   // add your config here
-  config.middleware = ['response'];
+  config.middleware = ['request','response'];
 
   // api base url
   config.apiBaseUrl = 'api'

@@ -1,5 +1,3 @@
-// const Subscription = require('egg').Subscription
-
 const moment = require('moment')
 
 module.exports = app => {

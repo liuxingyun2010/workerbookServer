@@ -76,6 +76,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -124,6 +125,9 @@ module.exports = app => {
         }
 
         // 找到并且更新
+        await app.redis.del(`wb:mission:${id}`)
+
+        // 找到并且更新
         return await ctx.model.Mission.update({
           _id: id
         }, {
@@ -134,6 +138,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -207,15 +212,17 @@ module.exports = app => {
         }
 
         // 找到并且更新
-        return await ctx.model.Mission.update({
+        await app.redis.del(`wb:mission:${id}`)
+
+        const r = await ctx.model.Mission.update({
           _id: id
         }, {
           $set: sql
         })
       } catch (e) {
-        console.log(e)
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -236,6 +243,8 @@ module.exports = app => {
         }
 
         // 找到并且更新
+        await app.redis.del(`wb:mission:${id}`)
+
         const result = await ctx.model.Mission.update({
           _id: id
         }, {
@@ -253,6 +262,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -274,6 +284,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -289,10 +300,10 @@ module.exports = app => {
       }
 
       const result = await app.redis.get(`wb:mission:${id}`)
+
       if (result) {
         return JSON.parse(result)
       }
-
 
       let info = await this.ctx.model.Mission.findOne({
         _id: id,
@@ -358,6 +369,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }

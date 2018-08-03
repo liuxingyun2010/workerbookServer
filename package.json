@@ -6,6 +6,7 @@
   "dependencies": {
     "egg": "^2.2.1",
     "egg-jwt": "^3.0.0",
+    "egg-logger": "^1.7.1",
     "egg-mongoose": "^3.1.0",
     "egg-redis": "^2.0.0",
     "egg-scripts": "^2.5.0",

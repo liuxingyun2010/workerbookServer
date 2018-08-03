@@ -16,7 +16,8 @@ module.exports = app => {
       }
       catch (e) {
         ctx.error({
-          code: e.code
+          code: e.code,
+          error: e.error
         })
       }
     }
@@ -34,7 +35,8 @@ module.exports = app => {
       }
       catch (e) {
         ctx.error({
-          code: e.code
+          code: e.code,
+          error: e.error
         })
       }
     }
@@ -51,7 +53,8 @@ module.exports = app => {
       }
       catch (e) {
         ctx.error({
-          code: e.code
+          code: e.code,
+          error: e.error
         })
       }
     }
@@ -69,7 +72,8 @@ module.exports = app => {
       }
       catch (e) {
         ctx.error({
-          code: e.code
+          code: e.code,
+          error: e.error
         })
       }
     }
@@ -88,7 +92,8 @@ module.exports = app => {
       }
       catch (e) {
         ctx.error({
-          code: e.code
+          code: e.code,
+          error: e.error
         })
       }
     }

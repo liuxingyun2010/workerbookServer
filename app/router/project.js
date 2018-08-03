@@ -6,7 +6,7 @@ module.exports = app => {
   app.get(`${prefix}/projects/`, app.jwt, checkJwt(), 'project.list')
   app.get(`/projects/`, app.jwt, checkJwt(), 'project.f_list')
   app.get(`${prefix}/projects/:id`, app.jwt, checkJwt(), 'project.one')
-  app.patch(`${prefix}/projects/:id`, app.jwt, checkJwt(), auth([99]), 'project.update')
+  app.put(`${prefix}/projects/:id`, app.jwt, checkJwt(), auth([99]), 'project.update')
   app.post(`${prefix}/projects/`, app.jwt, checkJwt(), auth([99]), 'project.add')
   app.delete(`${prefix}/projects/:id`, app.jwt, checkJwt(),  auth([99]), 'project.delete')
 }

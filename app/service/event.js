@@ -40,6 +40,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -87,6 +88,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -124,6 +126,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -145,6 +148,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
@@ -212,9 +216,9 @@ module.exports = app => {
 
         return result
       } catch (e) {
-        console.log(e)
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }

@@ -83,7 +83,7 @@ module.exports = app => {
           const missionByUserId = missionInfo.user ? missionInfo.user._id : ''
 
           // 如果该任务不属于此用户，则不允许添加
-          if (!missionByUserId || userId !== missionByUserId) {
+          if (!missionByUserId || String(userId) !== String(missionByUserId)) {
             return Promise.reject({
               code: ResCode.DailyStatusUnauthorized,
             })
@@ -189,6 +189,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError,
         })
       }
@@ -247,6 +248,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError,
         })
       }
@@ -322,6 +324,7 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError,
         })
       }
@@ -367,7 +370,7 @@ module.exports = app => {
         }
 
         const result = {}
-        const list = await ctx.model.Daily.find(sql, '-updateTime').skip(skip).limit(limit)
+        const list = await ctx.model.Daily.find(sql, '-createTime').skip(skip).limit(limit)
 
 
         const count = await ctx.model.Daily.find(sql).skip(skip).limit(limit).count()
@@ -384,6 +387,35 @@ module.exports = app => {
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
+          error: e,
+          status: HttpStatus.StatusInternalServerError,
+        })
+      }
+    }
+
+    // 获取今天的日报
+    async getMeToday() {
+      try {
+        const {
+          ctx,
+        } = this
+
+        const id = ctx.userInfo._id
+
+        const currentDate = moment().format('YYYY-MM-DD')
+
+        const sql = {
+          date: currentDate,
+          userId: id
+        }
+
+        const result = await ctx.model.Daily.findOne(sql)
+
+        return result? result.dailyList : []
+      } catch (e) {
+        return Promise.reject({
+          code: ResCode.Error,
+          error: e,
           status: HttpStatus.StatusInternalServerError,
         })
       }

@@ -6,16 +6,22 @@ module.exports = app => {
   return class UserController extends app.Controller {
     // 登录
     async login() {
-      const { ctx } = this
+      const {
+        ctx
+      } = this
 
       try {
-        let userInfo = await ctx.service.user.login()
-        const { id } = userInfo
+        const userInfo = await ctx.service.user.login()
+        const {
+          id
+        } = userInfo
 
         // 设置 jwt
         const token = app.jwt.sign({
           id
-        }, app.config.jwt.secret)
+        }, app.config.jwt.secret, {
+          expiresIn: 60 * 60 * 24 * 365
+        })
 
         ctx.success({
           data: {
@@ -23,16 +29,15 @@ module.exports = app => {
           }
         })
       } catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
     // 获取个人信息
     async profile() {
-      const { ctx } = this
+      const {
+        ctx
+      } = this
       try {
         const {
           _id,
@@ -44,15 +49,16 @@ module.exports = app => {
 
         let departmentId = ''
         let departmentName = ''
-
+        
+        // 因为管理员是没有部门数据的
         if (role !== 99) {
-          departmentId = ctx.userInfo.department?ctx.userInfo.department._id: ''
-          departmentName = ctx.userInfo.department?ctx.userInfo.department.name: ''
+          departmentId = ctx.userInfo.department ? ctx.userInfo.department._id : ''
+          departmentName = ctx.userInfo.department ? ctx.userInfo.department.name : ''
         }
 
         ctx.success({
           data: {
-            id:_id,
+            id: _id,
             username,
             nickname,
             role,
@@ -63,37 +69,31 @@ module.exports = app => {
             }
           }
         })
-      }
-      catch(e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+      } catch (e) {
+        ctx.error(e)
       }
     }
 
     // 添加用户
     async add() {
-      const { ctx } = this
+      const {
+        ctx
+      } = this
       try {
-
         await ctx.service.user.insertUser()
-
         ctx.success({
           status: HttpStatus.StatusCreated
         })
-      }
-      catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+      } catch (e) {
+        ctx.error(e)
       }
     }
 
     // 编辑用户
     async edit() {
-      const { ctx } = this
+      const {
+        ctx
+      } = this
       try {
         await ctx.service.user.updateUser()
 
@@ -101,16 +101,15 @@ module.exports = app => {
           status: HttpStatus.StatusNoContent
         })
       } catch (e) {
-         ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
     // 停用或者启用用户
     async delete() {
-      const { ctx } = this
+      const {
+        ctx
+      } = this
       try {
         await ctx.service.user.deleteUser()
 
@@ -118,20 +117,19 @@ module.exports = app => {
           status: HttpStatus.StatusNoContent
         })
       } catch (e) {
-         ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
     // 获取单个用户
     async getUser() {
-      const { ctx } = this
+      const {
+        ctx
+      } = this
       try {
-        const id = this.ctx.params.id
-
+        const id = ctx.params.id
         const userInfo = await ctx.service.user.findUserById(id)
+        
         if (!userInfo) {
           return ctx.error({
             code: ResCode.UserNotFound
@@ -156,7 +154,7 @@ module.exports = app => {
 
         ctx.success({
           data: {
-            id:_id,
+            id: _id,
             username,
             nickname,
             role,
@@ -168,8 +166,7 @@ module.exports = app => {
             }
           }
         })
-      }
-      catch(e) {
+      } catch (e) {
         ctx.error({
           code: e.code,
           error: e.error
@@ -179,14 +176,15 @@ module.exports = app => {
 
     // 获取所有列表， 管理后台
     async list() {
-      const { ctx } = this
+      const {
+        ctx
+      } = this
       try {
         const result = await ctx.service.user.findUserList()
         ctx.success({
           data: result
         })
-      }
-      catch(e) {
+      } catch (e) {
         ctx.error({
           code: e.code,
           error: e.error
@@ -196,14 +194,15 @@ module.exports = app => {
 
     // 获取所有列表， 前端
     async f_list() {
-      const { ctx } = this
+      const {
+        ctx
+      } = this
       try {
         const result = await ctx.service.user.findUserList()
         ctx.success({
           data: result
         })
-      }
-      catch(e) {
+      } catch (e) {
         ctx.error({
           code: e.code,
           error: e.error
@@ -214,7 +213,9 @@ module.exports = app => {
 
     // 修改密码
     async editPwd() {
-      const { ctx } = this
+      const {
+        ctx
+      } = this
       try {
         await ctx.service.user.updatePwd()
 
@@ -222,7 +223,7 @@ module.exports = app => {
           status: HttpStatus.StatusNoContent
         })
       } catch (e) {
-         ctx.error({
+        ctx.error({
           code: e.code,
           error: e.error
         })
@@ -232,7 +233,9 @@ module.exports = app => {
 
     // 重置密码
     async resetPwd() {
-      const { ctx } = this
+      const {
+        ctx
+      } = this
       try {
         await ctx.service.user.resetPassword()
 
@@ -240,7 +243,7 @@ module.exports = app => {
           status: HttpStatus.StatusNoContent
         })
       } catch (e) {
-         ctx.error({
+        ctx.error({
           code: e.code,
           error: e.error
         })

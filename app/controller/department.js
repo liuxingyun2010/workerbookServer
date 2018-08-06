@@ -1,5 +1,5 @@
 'use strict';
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
@@ -9,16 +9,12 @@ module.exports = app => {
       const { ctx } = this
       try {
         const list = await ctx.service.department.getDepartmentList()
-
         ctx.success({
           data: list
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -27,16 +23,12 @@ module.exports = app => {
       const { ctx } = this
       try {
         const list = await ctx.service.department.getDepartmentList()
-
         ctx.success({
           data: list
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -56,10 +48,7 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -67,18 +56,13 @@ module.exports = app => {
     async add() {
       const { ctx } = this
       try {
-
         await ctx.service.department.save()
-
         ctx.success({
           status: HttpStatus.StatusCreated
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -87,16 +71,12 @@ module.exports = app => {
       const { ctx } = this
       try {
         await ctx.service.department.update()
-
         ctx.success({
           status: HttpStatus.StatusNoContent
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -105,16 +85,12 @@ module.exports = app => {
       const { ctx } = this
       try {
         await ctx.service.department.delete()
-
         ctx.success({
           status: HttpStatus.StatusNoContent
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
   }

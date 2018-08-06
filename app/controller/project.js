@@ -1,5 +1,5 @@
 'use strict';
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
@@ -15,15 +15,11 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
     // 前端获取项目
-    //
     async f_list() {
       const { ctx } = this
       try {
@@ -34,10 +30,7 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -46,16 +39,12 @@ module.exports = app => {
       const { ctx } = this
       try {
         const result = await ctx.service.project.findProject()
-        // const {id, count, name, createTime} = result
         ctx.success({
           data: result
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -71,10 +60,7 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -90,14 +76,11 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
-    // 删除部门，只有放部门人员为0的时候才能删除
+    // 删除项目
     async delete() {
       const { ctx } = this
       try {
@@ -108,10 +91,7 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
   }

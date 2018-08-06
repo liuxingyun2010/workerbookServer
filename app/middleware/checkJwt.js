@@ -1,6 +1,7 @@
 const HttpStatus = require('./httpStatus')
 
 module.exports = () => {
+  // 将jwt中的用户缓存数据，赋值到ctx上面
   return async function response(ctx, next) {
     if (!ctx.header || !ctx.header.authorization) {
       return ctx.error({
@@ -14,7 +15,7 @@ module.exports = () => {
       const id = jwt.id
       let userInfo = await app.redis.get(`wb:user:${id}`)
       if (!userInfo) {
-        userInfo = await ctx.service.user.findUserById(id)
+        userInfo = await ctx.service.user.getOneUser(id)
       } else {
         userInfo = JSON.parse(userInfo)
       }

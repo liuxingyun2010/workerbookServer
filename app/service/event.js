@@ -1,4 +1,4 @@
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
 const moment = require('moment')
 
@@ -10,6 +10,7 @@ module.exports = app => {
         const {
           ctx
         } = this
+
         const requestBody = ctx.request.body
         const {
           name
@@ -17,9 +18,7 @@ module.exports = app => {
 
 
         if (!name) {
-          return Promise.reject({
-            code: ResCode.EventNameEmpty
-          })
+          return Promise.reject(ResCode.EventNameNotFound)
         }
 
         // 判断日程是否已经存在
@@ -28,18 +27,15 @@ module.exports = app => {
         })
 
         if (eventInfo) {
-          return Promise.reject({
-            code: ResCode.EventNameExist
-          })
+          return Promise.reject(ResCode.EventNameExist)
         }
 
-        await ctx.model.Event.create({
+        return await ctx.model.Event.create({
           name
         })
-
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -60,9 +56,7 @@ module.exports = app => {
         } = requestBody
 
         if (!name) {
-          return Promise.reject({
-            code: ResCode.EventNameEmpty
-          })
+          return Promise.reject(ResCode.EventNameNotFound)
         }
 
         // 判断日程是否已经存在
@@ -71,11 +65,8 @@ module.exports = app => {
         })
 
         if (eventInfo) {
-          return Promise.reject({
-            code: ResCode.EventNameExist
-          })
+          return Promise.reject(ResCode.EventNameExist)
         }
-
 
         // 找到并且更新
         return await ctx.model.Event.update({
@@ -87,7 +78,7 @@ module.exports = app => {
         })
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -103,9 +94,7 @@ module.exports = app => {
         const id = ctx.params.id
 
         if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.EventIdError
-          })
+          return Promise.reject(ResCode.EventIdIllegal)
         }
 
         // 找到并且更新
@@ -118,14 +107,12 @@ module.exports = app => {
         })
 
         if (!result.n) {
-          return Promise.reject({
-            code: ResCode.EventNotFount
-          })
+          return Promise.reject(ResCode.EventNotFound)
         }
 
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -140,11 +127,8 @@ module.exports = app => {
           ctx
         } = this
         const id = ctx.params.id
-
         let result = await this.findOneById(id)
-
         return result
-
       } catch (e) {
         return Promise.reject({
           code: ResCode.Error,
@@ -158,16 +142,13 @@ module.exports = app => {
     // 查找任务，通过任务id
     async findOneById(id) {
       if (!this.ctx.helper.isObjectId(id)) {
-        return Promise.reject({
-          code: ResCode.EventIdError
-        })
+        return Promise.reject(ResCode.EventIdIllegal)
       }
 
       const result = await app.redis.get(`wb:event:${id}`)
       if (result) {
         return JSON.parse(result)
       }
-
 
       let info = await this.ctx.model.Event.findOne({
         _id: app.mongoose.Types.ObjectId(id),
@@ -217,7 +198,7 @@ module.exports = app => {
         return result
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })

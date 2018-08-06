@@ -1,4 +1,4 @@
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
@@ -39,7 +39,7 @@ module.exports = app => {
         return result
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -64,7 +64,7 @@ module.exports = app => {
         }
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -104,7 +104,7 @@ module.exports = app => {
         return list
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -149,7 +149,7 @@ module.exports = app => {
         return result
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -193,7 +193,7 @@ module.exports = app => {
         return result
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -247,7 +247,7 @@ module.exports = app => {
         return result
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -270,7 +270,7 @@ module.exports = app => {
         }
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -287,23 +287,19 @@ module.exports = app => {
         const id = ctx.params.id
 
         if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.ProjectIdError
-          })
+          return Promise.reject(ResCode.ProjectIdIllegal)
         }
 
         const result = await this.findProjectById(id)
 
         if (!result) {
-          return Promise.reject({
-            code: ResCode.ProjectDontExist
-          })
+          return Promise.reject(ResCode.ProjectDontExist)
         }
 
         return result
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -350,6 +346,7 @@ module.exports = app => {
         const {
           ctx
         } = this
+
         const requestBody = ctx.request.body
         const {
           name,
@@ -359,23 +356,16 @@ module.exports = app => {
           weight = 1
         } = requestBody
 
-
         if (!name) {
-          return Promise.reject({
-            code: ResCode.ProjectNameEmpty
-          })
+          return Promise.reject(ResCode.ProjectNameNofound)
         }
 
         if (!deadline) {
-          return Promise.reject({
-            code: ResCode.ProjectDeadlineEmpty
-          })
+          return Promise.reject(ResCode.ProjectDeadlineNofound)
         }
 
         if (!departments || departments.length === 0) {
-          return Promise.reject({
-            code: ResCode.ProjectDepartmentEmpty
-          })
+          return Promise.reject(ResCode.DepartmentNameNotFound)
         }
 
         return await ctx.model.Project.create({
@@ -388,7 +378,7 @@ module.exports = app => {
 
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -432,6 +422,8 @@ module.exports = app => {
           params.description = description
         }
 
+        await app.redis.del(`wb:project:${id}`)
+
         // 找到并且更新
         const result = await ctx.model.Project.update({
           _id: id
@@ -440,16 +432,11 @@ module.exports = app => {
         })
 
         if (!result.n) {
-          return Promise.reject({
-            code: ResCode.ProjectDontExist
-          })
+          return Promise.reject(ResCode.ProjectDontExist)
         }
-
-        await app.redis.del(`wb:project:${id}`)
-
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -465,10 +452,10 @@ module.exports = app => {
         const id = ctx.params.id
 
         if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.ProjectIdError
-          })
+          return Promise.reject(ResCode.ProjectIdIllegal)
         }
+
+        await app.redis.del(`wb:project:${id}`)
 
         // 找到并且更新
         const findProject = await ctx.model.Project.update({
@@ -478,14 +465,9 @@ module.exports = app => {
             isDelete: true
           }
         })
-
-        if (findProject.n) {
-          await app.redis.del(`wb:project:${id}`)
-        }
-
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })

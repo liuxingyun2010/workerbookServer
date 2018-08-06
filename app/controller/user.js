@@ -1,5 +1,5 @@
 'use strict';
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
@@ -49,7 +49,7 @@ module.exports = app => {
 
         let departmentId = ''
         let departmentName = ''
-        
+
         // 因为管理员是没有部门数据的
         if (role !== 99) {
           departmentId = ctx.userInfo.department ? ctx.userInfo.department._id : ''
@@ -127,14 +127,7 @@ module.exports = app => {
         ctx
       } = this
       try {
-        const id = ctx.params.id
-        const userInfo = await ctx.service.user.findUserById(id)
-        
-        if (!userInfo) {
-          return ctx.error({
-            code: ResCode.UserNotFound
-          })
-        }
+        const userInfo = await ctx.service.user.getOneUser()
 
         const {
           _id,
@@ -167,10 +160,7 @@ module.exports = app => {
           }
         })
       } catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -185,10 +175,7 @@ module.exports = app => {
           data: result
         })
       } catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -203,13 +190,9 @@ module.exports = app => {
           data: result
         })
       } catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
-
 
     // 修改密码
     async editPwd() {
@@ -218,18 +201,13 @@ module.exports = app => {
       } = this
       try {
         await ctx.service.user.updatePwd()
-
         ctx.success({
           status: HttpStatus.StatusNoContent
         })
       } catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
-
 
     // 重置密码
     async resetPwd() {
@@ -238,17 +216,12 @@ module.exports = app => {
       } = this
       try {
         await ctx.service.user.resetPassword()
-
         ctx.success({
           status: HttpStatus.StatusNoContent
         })
       } catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
-
   }
 }

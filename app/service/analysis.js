@@ -1,4 +1,4 @@
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
 module.exports = app => {
   class AnalysisService extends app.Service {
@@ -6,7 +6,6 @@ module.exports = app => {
     async findDepartmentAnalysis() {
       try {
         const { ctx } = this
-
         const redisAnalysisDepartments = await app.redis.get('wb:analysis:departments')
         if (redisAnalysisDepartments){
           return JSON.parse(redisAnalysisDepartments)
@@ -65,7 +64,7 @@ module.exports = app => {
         return departments
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -142,7 +141,7 @@ module.exports = app => {
         return resultInfo
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -190,12 +189,13 @@ module.exports = app => {
           date: 1
         })
 
+
         missionsAnalysisList.forEach((item, index) => {
           const userId = item.userId
           const missionId = item.missionId
           const dateInfo = {}
 
-          // 去重
+          // 去重，入库时候去重
           if (missions[missionId] && missions[missionId].dates){
             const index = missions[missionId].dates.findIndex(i => i.date === item.date)
             if (index > -1) {
@@ -245,7 +245,7 @@ module.exports = app => {
         return list
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -329,7 +329,7 @@ module.exports = app => {
         return result
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })

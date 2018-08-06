@@ -1,5 +1,5 @@
 'use strict';
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
@@ -15,10 +15,7 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -33,10 +30,7 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -51,10 +45,7 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
 
@@ -69,10 +60,7 @@ module.exports = app => {
         })
       }
       catch (e) {
-        ctx.error({
-          code: e.code,
-          error: e.error
-        })
+        ctx.error(e)
       }
     }
   }

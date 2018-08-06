@@ -1,4 +1,4 @@
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
@@ -19,27 +19,19 @@ module.exports = app => {
 
 
         if (!name) {
-          return Promise.reject({
-            code: ResCode.MissionNameEmpty
-          })
+          return Promise.reject(ResCode.MissionNameNotFound)
         }
 
         if (!ctx.helper.isObjectId(projectId)) {
-          return Promise.reject({
-            code: ResCode.MissionProjectIdError
-          })
+          return Promise.reject(ResCode.ProjectNotFound)
         }
 
         if (!ctx.helper.isObjectId(userId)) {
-          return Promise.reject({
-            code: ResCode.UserIdIlligal
-          })
+          return Promise.reject(ResCode.UserIdIllegal)
         }
 
         if (!deadline) {
-          return Promise.reject({
-            code: ResCode.MissionDeadlineEmpty
-          })
+          return Promise.reject(ResCode.MissionDeadlineNotFound)
         }
 
         const userInfo = await ctx.service.user.findUserById(userId)
@@ -49,16 +41,12 @@ module.exports = app => {
         const projectInfo = await ctx.service.project.findProjectById(projectId)
 
         if (!projectInfo) {
-          return Promise.reject({
-            code: ResCode.MissionProjectDontExist
-          })
+          return Promise.reject(ResCode.ProjectDontExist)
         }
 
         // 如果项目存在，则需要判断任务的截止时间不能大于项目的截止时间
         if (new Date(projectInfo.deadline) < new Date(deadline)) {
-          return Promise.reject({
-            code: ResCode.MissionDeadlineError
-          })
+          return Promise.reject(ResCode.MissionDeadlineOverProjectDeadline)
         }
 
         const missionResult = await ctx.model.Mission.create({
@@ -75,7 +63,7 @@ module.exports = app => {
         }
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -92,36 +80,26 @@ module.exports = app => {
         const id = obj.missionId
         const progress = obj.progress || 0
 
-
         if (progress && !ctx.helper.isInt(progress) && progress <=100) {
-          return Promise.reject({
-            code: ResCode.DailyProgressIlligeal
-          })
+          return Promise.reject(ResCode.DailyProgressIllegal)
         }
 
         let missionInfo = await this.findOneById(id)
 
         if (!missionInfo) {
-          return Promise.reject({
-            code: ResCode.MissionNotFount
-          })
+          return Promise.reject(ResCode.MissionNotFound)
         }
 
         const projectId = missionInfo.project? missionInfo.project._id: ''
 
         if (!projectId){
-          return Promise.reject({
-            code: ResCode.MissionProjectDontExist
-          })
+          return Promise.reject(ResCode.ProjectDontExist)
         }
-
         // 判断项目是否存在
         const projectInfo = await ctx.service.project.findProjectById(projectId)
 
         if (!projectInfo) {
-          return Promise.reject({
-            code: ResCode.MissionProjectDontExist
-          })
+          return Promise.reject(ResCode.ProjectDontExist)
         }
 
         // 找到并且更新
@@ -137,7 +115,7 @@ module.exports = app => {
         })
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -170,9 +148,7 @@ module.exports = app => {
         }
 
         if (userId && !ctx.helper.isObjectId(userId)) {
-          return Promise.reject({
-            code: ResCode.UserIdIlligal
-          })
+          return Promise.reject(ResCode.UserIdIllegal)
         }
 
         if (userId){
@@ -182,33 +158,25 @@ module.exports = app => {
         let missionInfo = await this.findOneById(id)
 
         if (!missionInfo) {
-          return Promise.reject({
-            code: ResCode.MissionNotFount
-          })
+          return Promise.reject(ResCode.MissionNotFount)
         }
 
         const projectId = missionInfo.project? missionInfo.project._id: ''
 
         if (!projectId){
-          return Promise.reject({
-            code: ResCode.MissionProjectDontExist
-          })
+          return Promise.reject(ResCode.ProjectNotFound)
         }
 
         // 判断项目是否存在
         const projectInfo = await ctx.service.project.findProjectById(projectId)
 
         if (!projectInfo) {
-          return Promise.reject({
-            code: ResCode.MissionProjectDontExist
-          })
+          return Promise.reject(ResCode.ProjectDontExist)
         }
 
         // 如果项目存在，则需要判断任务的截止时间不能大于项目的截止时间
         if (deadline && new Date(projectInfo.deadline) < new Date(deadline)) {
-          return Promise.reject({
-            code: ResCode.MissionDeadlineError
-          })
+          return Promise.reject(ResCode.MissionDeadlineOverProjectDeadline)
         }
 
         // 找到并且更新
@@ -221,7 +189,7 @@ module.exports = app => {
         })
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -237,9 +205,7 @@ module.exports = app => {
         const id = ctx.params.id
 
         if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.MissionIdError
-          })
+          return Promise.reject(ResCode.MissionIdIllegal)
         }
 
         // 找到并且更新
@@ -254,14 +220,12 @@ module.exports = app => {
         })
 
         if (!result.n) {
-          return Promise.reject({
-            code: ResCode.MissionNotFount
-          })
+          return Promise.reject(ResCode.MissionNotFount)
         }
 
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -283,20 +247,17 @@ module.exports = app => {
 
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
     }
 
-
     // 查找任务，通过任务id
     async findOneById(id) {
       if (!this.ctx.helper.isObjectId(id)) {
-        return Promise.reject({
-          code: ResCode.MissionIdError
-        })
+        return Promise.reject(ResCode.MissionIdIllegal)
       }
 
       const result = await app.redis.get(`wb:mission:${id}`)
@@ -368,7 +329,7 @@ module.exports = app => {
         return result
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })

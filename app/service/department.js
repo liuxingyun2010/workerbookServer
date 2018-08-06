@@ -1,4 +1,4 @@
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
 
 module.exports = app => {
@@ -16,7 +16,6 @@ module.exports = app => {
         }
 
         let result = {}
-
         let sql = [{
           $match: {
             isDelete: {$ne: true}
@@ -58,7 +57,7 @@ module.exports = app => {
         return result
       }catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -72,35 +71,30 @@ module.exports = app => {
         const id = this.ctx.params.id || ''
 
         if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.DepartmentIdError
-          })
+          return Promise.reject(ResCode.DepartmentIdIllegal)
         }
 
         const department = await this.findOneDepartmentByRedis(id)
 
         if (!department) {
-          return Promise.reject({
-            code: ResCode.DepartmentExist
-          })
+          return Promise.reject(ResCode.DepartmentHasExist)
         }
 
         return department
       }catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
     }
 
+    // 查询单个部门，通过id
     async findOneDepartmentByRedis(id) {
       try {
         if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.DepartmentIdError
-          })
+          return Promise.reject(ResCode.DepartmentIdIllegal)
         }
 
         const department = await app.redis.get(`wb:department:${id}`)
@@ -119,13 +113,12 @@ module.exports = app => {
         return findDepartment
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
     }
-
 
     // 查找单个部门
     async findDepartment(params) {
@@ -142,9 +135,7 @@ module.exports = app => {
         const { name } = requestBody
 
         if (!name) {
-          return Promise.reject({
-            code: ResCode.DepartmentNameEmpty
-          })
+          return Promise.reject(ResCode.DepartmentNameNotFound)
         }
 
         const department = await this.findDepartment({
@@ -152,24 +143,20 @@ module.exports = app => {
         })
 
         if (department) {
-          return Promise.reject({
-            code: ResCode.DepartmentExist
-          })
+          return Promise.reject(ResCode.DepartmentHasExist)
         }
 
         return await ctx.model.Department.create({
           name
         })
-
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
     }
-
 
     // 更新
     async update() {
@@ -181,17 +168,12 @@ module.exports = app => {
         const { name } = requestBody
 
         if (!name) {
-          return Promise.reject({
-            code: ResCode.DepartmentNameEmpty
-          })
+          return Promise.reject(ResCode.DepartmentNameNotFound)
         }
 
         if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.DepartmentIdError
-          })
+          return Promise.reject(ResCode.DepartmentIdIllegal)
         }
-
 
         // 查找部门，不能存在重名的名称
         const department = await this.findDepartment({
@@ -202,9 +184,7 @@ module.exports = app => {
         })
 
         if (department) {
-          return Promise.reject({
-            code: ResCode.DepartmentExist
-          })
+          return Promise.reject(ResCode.DepartmentHasExist)
         }
 
         // 找到并且更新
@@ -217,14 +197,11 @@ module.exports = app => {
         })
 
         if (!result.n) {
-          return Promise.reject({
-            code: ResCode.DepartmentDontExist
-          })
+          return Promise.reject(ResCode.DepartmentDontExist)
         }
-
       }catch(e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -238,24 +215,17 @@ module.exports = app => {
         const id = ctx.params.id
 
         if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.DepartmentIdError
-          })
+          return Promise.reject(ResCode.DepartmentIdIllegal)
         }
 
         // 查找部门，不能存在重名的名称
         const departmentResult = await this.findOneDepartmentByRedis(id)
-
         if (!departmentResult) {
-          return Promise.reject({
-            code: ResCode.DepartmentDontExist
-          })
+          return Promise.reject(ResCode.DepartmentDontExist)
         }
 
         if (departmentResult.count !== 0) {
-          return Promise.reject({
-            code: ResCode.DepartmentDontRemove
-          })
+          return Promise.reject(ResCode.DepartmentRemoveForbidden)
         }
 
         // 找到并且更新
@@ -269,7 +239,7 @@ module.exports = app => {
 
       }catch(e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })

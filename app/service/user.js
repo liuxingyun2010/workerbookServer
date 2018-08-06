@@ -1,10 +1,10 @@
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
-
 const md5 = require('md5')
 
 module.exports = app => {
   class UserService extends app.Service {
+    // 登录
     async login() {
       try {
         const {
@@ -12,30 +12,15 @@ module.exports = app => {
         } = this
 
         const requestBody = ctx.request.body
-
-        if (!requestBody) {
-          return Promise.reject({
-            code: ResCode.AccountPwEmpty
-          })
-        }
-
-        const {
-          username,
-          password
-        } = requestBody
+        const { username, password } = requestBody
 
         if (!username) {
-          return Promise.reject({
-            code: ResCode.AccountEmpty
-          })
+          return Promise.reject(ResCode.UserAccountNotFound)
         }
 
         if (!password) {
-          return Promise.reject({
-            code: ResCode.PwEmpty
-          })
+          return Promise.reject(ResCode.UserPasswordNotFound)
         }
-
         // 查找用户，第一步验证用户名
         const findUser = await this.findUserByUsernameAndPw({
           username,
@@ -44,16 +29,14 @@ module.exports = app => {
         })
 
         if (!findUser) {
-          return Promise.reject({
-            code: ResCode.AccountPwError
-          })
+          return Promise.reject(ResCode.UserAccountOrPasswordError)
         }
 
-        return findUser
 
+        return findUser
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -62,17 +45,24 @@ module.exports = app => {
 
     // 通过用户名和密码查询用户
     async findUserByUsernameAndPw(params) {
-      const userInfo = await this.ctx.model.User.findOne(params, 'id')
-      return userInfo
+      try {
+        const userInfo = await this.ctx.model.User.findOne(params, 'id')
+        return userInfo
+      }
+      catch(e) {
+        return Promise.reject({
+          ...ResCode.Error,
+          error: e,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
     }
 
     // 通过不同的条件获取用户信息
     async findUserById(id) {
       try {
         if (!id) {
-          return Promise.reject({
-            code: ResCode.AccountIdEmpty
-          })
+          return Promise.reject(ResCode.UserIdIllegal)
         }
 
         const userInfo = await app.redis.get(`wb:user:${id}`)
@@ -81,9 +71,7 @@ module.exports = app => {
         }
 
         if (!this.ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.UserIdIlligal
-          })
+          return Promise.reject(ResCode.UserIdIllegal)
         }
 
         const findUser = await this.ctx.model.User.findOne({
@@ -103,13 +91,14 @@ module.exports = app => {
         return findUser
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
     }
 
+    // 新增用户
     async insertUser() {
       try {
         const {
@@ -117,11 +106,6 @@ module.exports = app => {
         } = this
         const requestBody = ctx.request.body
 
-        if (!requestBody) {
-          return Promise.reject({
-            code: ResCode.AccountInfoEmpty
-          })
-        }
         const {
           username,
           password,
@@ -134,39 +118,27 @@ module.exports = app => {
         } = requestBody
 
         if (!username) {
-          return Promise.reject({
-            code: ResCode.AccountPwEmpty
-          })
+          return Promise.reject(ResCode.UserAccountNotFound)
         }
 
         if (!password) {
-          return Promise.reject({
-            code: ResCode.PwEmpty
-          })
+          return Promise.reject(ResCode.UserPasswordNotFound)
         }
 
         if (!nickname) {
-          return Promise.reject({
-            code: ResCode.NicknameEmpty
-          })
+          return Promise.reject(ResCode.UserNicknameNotFound)
         }
 
         if (!departmentId) {
-          return Promise.reject({
-            code: ResCode.DepartmentEmpty
-          })
+          return Promise.reject(ResCode.UserDepartmentNotFound)
         }
 
         if (!role) {
-          return Promise.reject({
-            code: ResCode.RoleEmpty
-          })
+          return Promise.reject(ResCode.UserRoleNotFound)
         }
 
         if (!title) {
-          return Promise.reject({
-            code: ResCode.TitleEmpty
-          })
+          return Promise.reject(ResCode.UserTitleNotFound)
         }
 
         // 查找用户，第一步验证用户名
@@ -175,9 +147,7 @@ module.exports = app => {
         })
 
         if (findUser) {
-          return Promise.reject({
-            code: ResCode.UserExist
-          })
+          return Promise.reject(ResCode.UserHasExist)
         }
 
         const userInfo = await ctx.model.User.create({
@@ -197,7 +167,7 @@ module.exports = app => {
 
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -207,17 +177,9 @@ module.exports = app => {
     // 更新用户
     async updateUser() {
       try {
-        const {
-          ctx
-        } = this
+        const { ctx } = this
         const id = ctx.params.id
         const requestBody = ctx.request.body
-
-        if (!requestBody) {
-          return Promise.reject({
-            code: ResCode.AccountInfoEmpty
-          })
-        }
 
         const {
           nickname,
@@ -231,55 +193,41 @@ module.exports = app => {
 
 
         if (!nickname) {
-          return Promise.reject({
-            code: ResCode.NicknameEmpty
-          })
+          return Promise.reject(ResCode.UserNicknameNotFound)
         }
 
         if (!departmentId) {
-          return Promise.reject({
-            code: ResCode.DepartmentEmpty
-          })
+          return Promise.reject(ResCode.UserDepartmentNotFound)
         }
 
         if (!ctx.helper.isObjectId(departmentId)) {
-          return Promise.reject({
-            code: ResCode.DepartmentIdError
-          })
+          return Promise.reject(ResCode.DepartmentIdIllegal)
         }
 
         if (!role) {
-          return Promise.reject({
-            code: ResCode.RoleEmpty
-          })
+          return Promise.reject(ResCode.UserRoleNotFound)
         }
 
         if (!title) {
-          return Promise.reject({
-            code: ResCode.TitleEmpty
-          })
+          return Promise.reject(ResCode.UserTitleNotFound)
         }
 
         if (!ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.UserIdIlligal
-          })
+          return Promise.reject(ResCode.UserIdIllegal)
         }
 
         if (!status) {
-          return Promise.reject({
-            code: ResCode.UserStatusEmpty
-          })
+          return Promise.reject(ResCode.UserStatusNotFound)
         }
 
         const user = await this.findUserById(id)
         if (!user) {
-          return Promise.reject({
-            code: ResCode.UserNotFound
-          })
+          return Promise.reject(ResCode.UserDontExist)
         }
 
         // 查找用户并更新
+        await app.redis.del(`wb:user:${id}`)
+
         const result = await ctx.model.User.findOneAndUpdate({
           _id: id
         }, {
@@ -295,12 +243,8 @@ module.exports = app => {
         },{new: true})
 
         if (!result) {
-          return Promise.reject({
-            code: ResCode.UserNotFound
-          })
+          return Promise.reject(ResCode.UserDontExist)
         }
-
-        await app.redis.del(`wb:user:${id}`)
 
         // 动态计算所有
         if (String(user.department._id) !== String(departmentId)) {
@@ -309,7 +253,7 @@ module.exports = app => {
       }
       catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -325,12 +269,12 @@ module.exports = app => {
         const id = ctx.params.id
 
         if (!ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.UserIdIlligal
-          })
+          return Promise.reject(ResCode.UserIdIllegal)
         }
 
         // 查找用户并更新
+        await app.redis.del(`wb:user:${id}`)
+
         const result = await ctx.model.User.findOneAndUpdate({
           _id: id
         }, {
@@ -340,18 +284,14 @@ module.exports = app => {
         },{new: true})
 
         if (!result) {
-          return Promise.reject({
-            code: ResCode.UserNotFound
-          })
+          return Promise.reject(ResCode.UserDontExist)
         }
-
-        await app.redis.del(`wb:user:${id}`)
 
         // 更新用户
         this.calcMemberCount([result.department])
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
@@ -409,13 +349,14 @@ module.exports = app => {
         return result
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
     }
 
+    // 更新密码
     async updatePwd() {
       try {
         const { ctx } = this
@@ -429,21 +370,15 @@ module.exports = app => {
 
 
         if (!password) {
-          return Promise.reject({
-            code: ResCode.PwEmpty
-          })
+          return Promise.reject(ResCode.UserPasswordNotFound)
         }
 
         if (!newPassword) {
-          return Promise.reject({
-            code: ResCode.NewPwEmpty
-          })
+          return Promise.reject(ResCode.UserNewPasswordNotFound)
         }
 
         if (!ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.UserIdIlligal
-          })
+          return Promise.reject(ResCode.UserIdIllegal)
         }
 
         const findOne = await this.findUserByUsernameAndPw({
@@ -452,12 +387,12 @@ module.exports = app => {
         })
 
         if (!findOne) {
-          return Promise.reject({
-            code: ResCode.PwError
-          })
+          return Promise.reject(ResCode.UserPasswordError)
         }
 
         // 查找用户并更新
+        await app.redis.del(`wb:user:${id}`)
+
         const result = await ctx.model.User.update({
           _id: id,
           password: md5(password)
@@ -466,21 +401,16 @@ module.exports = app => {
             password: md5(newPassword)
           }
         })
-
-        // 更新成功则删除redis
-        if (result.n) {
-          await app.redis.del(`wb:user:${id}`)
-        }
-
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
     }
 
+    // 重置密码
     async resetPassword() {
       try {
         const { ctx } = this
@@ -489,24 +419,20 @@ module.exports = app => {
         const { newPassword } = requestBody
 
         if (!newPassword) {
-          return Promise.reject({
-            code: ResCode.NewPwEmpty
-          })
+          return Promise.reject(ResCode.UserNewPasswordNotFound)
         }
 
         if (!ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.UserIdIlligal
-          })
+          return Promise.reject(ResCode.UserIdIllegal)
         }
 
         const findOne = await this.findUserById(id)
 
         if (!findOne) {
-          return Promise.reject({
-            code: ResCode.UserNotFound
-          })
+          return Promise.reject(ResCode.UserDontExist)
         }
+
+        await app.redis.del(`wb:user:${id}`)
 
         // 查找用户并更新
         const result = await ctx.model.User.update({
@@ -516,30 +442,27 @@ module.exports = app => {
             password: md5(newPassword)
           }
         })
-
-        // 更新成功则删除redis
-        if (result.n) {
-          await app.redis.del(`wb:user:${id}`)
-        }
-
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })
       }
     }
 
+    // 更新部门用户数量
     async calcMemberCount(list) {
       try {
         list.forEach(async (item, index) => {
           const id = app.mongoose.Types.ObjectId(item)
-
           const count = await this.ctx.model.User.find({
             department: id,
             isDelete: false
           }).count()
+
+          // 删除缓存
+          await app.redis.del(`wb:department:${id}`)
 
           await this.ctx.model.Department.update({
             _id: id
@@ -552,7 +475,28 @@ module.exports = app => {
       }
       catch(e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
+          error: e,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+    // 获取单个用户
+    async getOneUser(){
+       try {
+        const { ctx } = this
+        const id = ctx.params.id
+        const user = await this.findUserById(id)
+        if (!user) {
+          return Promise.reject(ResCode.UserDontExist)
+        }
+
+        return user
+      }
+      catch (e) {
+        return Promise.reject({
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError
         })

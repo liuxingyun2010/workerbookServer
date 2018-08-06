@@ -1,4 +1,4 @@
-const ResCode = require('../middleware/responseCode')
+const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
 const moment = require('moment')
 
@@ -28,15 +28,11 @@ module.exports = app => {
 
 
         if (!record) {
-          return Promise.reject({
-            code: ResCode.DailyRecordEmpty,
-          })
+          return Promise.reject(ResCode.DailyRecordNotFound)
         }
 
         if (missionId && !ctx.helper.isObjectId(missionId)) {
-          return Promise.reject({
-            code: ResCode.MissionIdError,
-          })
+          return Promise.reject(ResCode.MissionIdIllegal)
         }
 
         if (eventId && !ctx.helper.isObjectId(eventId)) {
@@ -45,48 +41,32 @@ module.exports = app => {
           })
         }
 
-        if (missionId && !progress) {
-          return Promise.reject({
-            code: ResCode.DailyProgressEmpty,
-          })
-        }
-
         if (progress && !ctx.helper.isInt(progress) && progress <= 100) {
-          return Promise.reject({
-            code: ResCode.DailyProgressIlligeal,
-          })
+          return Promise.reject(ResCode.DailyProgressIllegal)
         }
 
         // 任务id和eventid不能同时存在
         if (eventId && missionId) {
-          return Promise.reject({
-            code: ResCode.DailyEventAndMissionTogather,
-          })
+          return Promise.reject(ResCode.DailyHasEventAndMission)
         }
 
         // 任务id和eventid不能同时为空
         if (!eventId && !missionId) {
-          return Promise.reject({
-            code: ResCode.DailyEventAndMissionAllEmpty,
-          })
+          return Promise.reject(ResCode.DailyNoEventAndMission)
         }
 
         if (missionId) {
           const missionInfo = await ctx.service.mission.findOneById(missionId)
           // 任务是否存在
           if (!missionInfo) {
-            return Promise.reject({
-              code: ResCode.MissionNotFount,
-            })
+            return Promise.reject(ResCode.MissionNotFound)
           }
 
           const missionByUserId = missionInfo.user ? missionInfo.user._id : ''
 
           // 如果该任务不属于此用户，则不允许添加
           if (!missionByUserId || String(userId) !== String(missionByUserId)) {
-            return Promise.reject({
-              code: ResCode.DailyStatusUnauthorized,
-            })
+            return Promise.reject(ResCode.DailyStatusUnauthorized)
           }
 
           const projectInfo = missionInfo.project
@@ -98,9 +78,7 @@ module.exports = app => {
           const projectResult = await ctx.service.project.findProjectById(projectId)
 
           if (!projectResult) {
-            return Promise.reject({
-              code: ResCode.MissionProjectDontExist,
-            })
+            return Promise.reject(ResCode.ProjectNotFound)
           }
         }
 
@@ -110,9 +88,7 @@ module.exports = app => {
 
           // 任务是否存在
           if (!eventInfo) {
-            return Promise.reject({
-              code: ResCode.EventNotFount,
-            })
+            return Promise.reject(ResCode.EventNotFound)
           }
 
           eventName = eventInfo ? eventInfo.name : ''
@@ -188,7 +164,7 @@ module.exports = app => {
 
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError,
         })
@@ -209,15 +185,11 @@ module.exports = app => {
         } = requestBody
 
         if (!record) {
-          return Promise.reject({
-            code: ResCode.DailyRecordEmpty,
-          })
+          return Promise.reject(ResCode.DailyRecordNotFound)
         }
 
         if (!ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.DailyRecordIdError,
-          })
+          return Promise.reject(ResCode.DailyIdIllegal)
         }
 
         const daily = await ctx.model.Daily.findOne({
@@ -225,16 +197,12 @@ module.exports = app => {
         })
 
         if (!daily) {
-          return Promise.reject({
-            code: ResCode.DailyNotFount,
-          })
+          return Promise.reject(ResCode.DailyNotFound)
         }
 
         // 如果该任务不属于此用户，则不允许添加
-        if (ctx.userInfo._id !== daily.userId) {
-          return Promise.reject({
-            code: ResCode.DailyStatusUnauthorized,
-          })
+        if (String(ctx.userInfo._id) !== String(daily.userId)) {
+          return Promise.reject(ResCode.DailyStatusUnauthorized,)
         }
 
         // 找到并且更新
@@ -247,14 +215,14 @@ module.exports = app => {
         })
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError,
         })
       }
     }
 
-    // 删除任务
+    // 删除日报
     async delete() {
       try {
         const {
@@ -263,9 +231,7 @@ module.exports = app => {
         const id = ctx.params.id
 
         if (!ctx.helper.isObjectId(id)) {
-          return Promise.reject({
-            code: ResCode.DailyRecordIdError,
-          })
+          return Promise.reject(ResCode.DailyIdIllegal)
         }
 
         const daily = await ctx.model.Daily.findOne({
@@ -273,20 +239,17 @@ module.exports = app => {
         })
 
         if (!daily) {
-          return Promise.reject({
-            code: ResCode.DailyNotFount,
-          })
+          return Promise.reject(ResCode.DailyNotFound)
         }
+
         // 如果该任务不属于此用户，则不允许添加
-        if (ctx.userInfo._id !== daily.userId) {
-          return Promise.reject({
-            code: ResCode.DailyStatusUnauthorized,
-          })
+        if (String(ctx.userInfo._id) !== String(daily.userId)) {
+          return Promise.reject(ResCode.DailyStatusUnauthorized)
         }
 
         // 找到当前的missionId
         const singleMission = daily.dailyList.find(item => {
-          return String(item._id) === id
+          return String(item._id) === String(id)
         })
 
         const missionId = singleMission ? singleMission.missionId : ''
@@ -323,14 +286,14 @@ module.exports = app => {
         }
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError,
         })
       }
     }
 
-    // 获取用户的任务列表
+    // 获取日报列表
     async getList() {
       try {
         const {
@@ -345,14 +308,11 @@ module.exports = app => {
         limit = Number(limit)
 
         if (userId && !ctx.helper.isObjectId(userId)){
-          return Promise.reject({
-            code: ResCode.UserIdIlligal,
-          })
+          return Promise.reject(ResCode.UserIdIllegal)
         }
+
         if (departmentId && !ctx.helper.isObjectId(departmentId)){
-          return Promise.reject({
-            code: RecCode.DepartmentIdError
-          })
+          return Promise.reject(RecCode.DepartmentIdIllegal)
         }
 
         const currentDate = date || moment().format('YYYY-MM-DD')
@@ -386,7 +346,7 @@ module.exports = app => {
         return result
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError,
         })
@@ -402,6 +362,10 @@ module.exports = app => {
 
         const id = ctx.userInfo._id
 
+        if (id && !ctx.helper.isObjectId(id)){
+          return Promise.reject(ResCode.UserIdIllegal)
+        }
+
         const currentDate = moment().format('YYYY-MM-DD')
 
         const sql = {
@@ -414,7 +378,7 @@ module.exports = app => {
         return result? result.dailyList : []
       } catch (e) {
         return Promise.reject({
-          code: ResCode.Error,
+          ...ResCode.Error,
           error: e,
           status: HttpStatus.StatusInternalServerError,
         })

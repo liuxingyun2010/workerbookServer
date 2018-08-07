@@ -333,7 +333,7 @@ module.exports = app => {
         const list = await ctx.model.Daily.find(sql, '-createTime').skip(skip).limit(limit)
 
 
-        const count = await ctx.model.Daily.find(sql).skip(skip).limit(limit).count()
+        const count = await ctx.model.Daily.find(sql).count()
 
         result.count = count
         result.list = list

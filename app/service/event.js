@@ -185,7 +185,7 @@ module.exports = app => {
         limit = Number(limit)
 
         const list = await ctx.model.Event.find(params, '-updateTime -isDelete').skip(skip).limit(limit)
-        const count = await ctx.model.Mission.find(params).skip(skip).limit(limit).count()
+        const count = await ctx.model.Mission.find(params).count()
 
         result.count = count
         result.list = list

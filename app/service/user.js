@@ -249,6 +249,9 @@ module.exports = app => {
         // 动态计算所有
         if (String(user.department._id) !== String(departmentId)) {
           this.calcMemberCount([user.department._id, departmentId])
+
+          // 同步任务关联用户
+          await ctx.service.mission.updateManyDepartment(id, departmentId)
         }
       }
       catch (e) {
@@ -327,8 +330,7 @@ module.exports = app => {
           }
         }
 
-        const count = await ctx.model.User.find(params).skip(skip).limit(limit).count()
-
+        const count = await ctx.model.User.find(params).count()
         // 查找用户并更新
         const list = await ctx.model.User.find(params, '-isDelete -updateTime -password').skip(skip).limit(limit).populate({
           path: 'department',

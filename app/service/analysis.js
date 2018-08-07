@@ -59,7 +59,7 @@ module.exports = app => {
           departments.push(result[key])
         }
 
-        await app.redis.set('wb:analysis:departments', JSON.stringify(departments), 'EX', 7200)
+        await app.redis.set('wb:analysis:departments', JSON.stringify(departments), 'EX', 100)
 
         return departments
       } catch (e) {
@@ -89,8 +89,9 @@ module.exports = app => {
         const userList = await ctx.model.User.find({
           isDelete: false,
           status: 1,
-          department: id
+          department: app.mongoose.Types.ObjectId(id)
         })
+
         userList.forEach((item, index) => {
           const id = item._id
           const nickname = item.nickname
@@ -105,12 +106,12 @@ module.exports = app => {
         const missions = await ctx.model.Mission.find({
           status: 1,
           isDelete: false,
-          department: id
+          department: app.mongoose.Types.ObjectId(id)
         }, '-updateTime -isDelete')
+
 
         missions.forEach((item, index) => {
           const d = item.user
-
           const now = new Date()
 
           if (now > item.deadline) {
@@ -120,7 +121,7 @@ module.exports = app => {
             item._doc.isDelay = false
           }
 
-          result[d].missions.push(item)
+          result[d] && result[d].missions.push(item)
         })
 
 
@@ -136,7 +137,7 @@ module.exports = app => {
           list: users
         }
 
-        await app.redis.set(`wb:analysis:departments:summary:${id}`, JSON.stringify(resultInfo), 'EX', 7200)
+        await app.redis.set(`wb:analysis:departments:summary:${id}`, JSON.stringify(resultInfo), 'EX', 100)
 
         return resultInfo
       } catch (e) {
@@ -285,7 +286,7 @@ module.exports = app => {
             }
           }).skip(skip).limit(limit)
 
-        const count = await ctx.model.Project.find(params).skip(skip).limit(limit).count()
+        const count = await ctx.model.Project.find(params).count()
 
         result.count = count
 

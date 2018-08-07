@@ -26,7 +26,7 @@ module.exports = app => {
 
         const list = await this.findProjectList(params, skip, limit)
 
-        const count = await ctx.model.Project.find(params).skip(skip).limit(limit).count()
+        const count = await ctx.model.Project.find(params).count()
 
         result.count = count
         result.list = list

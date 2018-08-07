@@ -187,6 +187,7 @@ module.exports = app => {
         }, {
           $set: sql
         })
+
       } catch (e) {
         return Promise.reject({
           ...ResCode.Error,
@@ -316,7 +317,7 @@ module.exports = app => {
           select: '-missions -isDelete -updateTime'
         })
 
-        const count = await ctx.model.Mission.find(params).skip(skip).limit(limit).count()
+        const count = await ctx.model.Mission.find(params).count()
 
         result.count = count
         result.list = list
@@ -334,6 +335,25 @@ module.exports = app => {
           status: HttpStatus.StatusInternalServerError
         })
       }
+    }
+
+
+    // 批量更新任务中的部门
+    async updateManyDepartment(userId, departmentId) {
+      const { ctx } = this
+      const x= await ctx.model.Mission.updateMany({
+        user: app.mongoose.Types.ObjectId(userId)
+      }, {
+        $set: {
+          department: app.mongoose.Types.ObjectId(departmentId)
+        }
+      })
+    } catch (e) {
+      return Promise.reject({
+        ...ResCode.Error,
+        error: e,
+        status: HttpStatus.StatusInternalServerError
+      })
     }
   }
   return ProjectService

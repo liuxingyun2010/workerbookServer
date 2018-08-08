@@ -10,15 +10,13 @@ module.exports = app => {
 
         // 过滤掉已经被删除的部门
         const params = {
-          isDelete: {
-            $ne: true
-          }
+          isDelete: false
         }
 
         let result = {}
         let sql = [{
           $match: {
-            isDelete: {$ne: true}
+            isDelete: false
           }
         },{
           $project: {
@@ -27,6 +25,10 @@ module.exports = app => {
             name: 1,
             count: 1,
             createTime: 1
+          }
+        },{
+          $sort: {
+            createTime: -1
           }
         }]
 
@@ -42,7 +44,7 @@ module.exports = app => {
           })
         }
 
-        const count = await ctx.model.User.countDocuments(params)
+        const count = await ctx.model.Department.count(params)
 
         const list = await ctx.model.Department.aggregate(sql)
 
@@ -139,7 +141,8 @@ module.exports = app => {
         }
 
         const department = await this.findDepartment({
-          name
+          name,
+          isDelete: false
         })
 
         if (department) {

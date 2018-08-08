@@ -77,6 +77,20 @@ module.exports = app => {
         ctx.error(e)
       }
     }
+
+    // 更新进度
+    async updateProgress() {
+      const { ctx } = this
+      try {
+        await ctx.service.mission.updateProgress()
+        ctx.success({
+          status: HttpStatus.StatusNoContent
+        })
+      }
+      catch (e) {
+        ctx.error(e)
+      }
+    }
   }
 }
 

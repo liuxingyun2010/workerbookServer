@@ -63,6 +63,21 @@ module.exports = app => {
         ctx.error(e)
       }
     }
+
+    // 项目总览
+    async projectSummary() {
+      const { ctx } = this
+      try {
+        const result = await ctx.service.analysis.findProjectSummaryAnalysis()
+
+        ctx.success({
+          data: result
+        })
+      }
+      catch (e) {
+        ctx.error(e)
+      }
+    }
   }
 }
 

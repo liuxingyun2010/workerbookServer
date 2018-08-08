@@ -6,6 +6,6 @@ module.exports = app => {
   app.delete(`/dailies/:id`, app.jwt, checkJwt(), 'daily.delete')
   app.get(`/dailies/`, app.jwt, checkJwt(), 'daily.list')
   app.get(`/dailies/profile`, app.jwt, checkJwt(), 'daily.today')
-  app.patch(`/dailies/mission/progress/:id`, app.jwt, checkJwt(), 'daily.today')
+  app.patch(`/dailies/mission/progress/:id`, app.jwt, checkJwt(), 'daily.updateProgress')
 }
 

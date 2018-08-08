@@ -23,6 +23,7 @@ const ErrorMsg = id => {
     '300003': '项目不存在',
     '300004': '项目ID不合法',
     '300005': '项目ID不能为空',
+    '300006': '项目不存在或者已经归档',
     '400001': '任务名称不能为空',
     '400002': '任务截止时间不能为空',
     '400003': '任务ID不合法',
@@ -41,7 +42,7 @@ const ErrorMsg = id => {
     '600003': '日程名称不能为空',
     '600004': '日程不存在',
     '700001': '您没有权限操作',
-    '000000': '成功',
+    '000000': 'success',
     '999999': '系统错误',
   }
 
@@ -75,6 +76,7 @@ const Status = {
   ProjectDontExist: ErrorMsg('300003'), // 项目不存在
   ProjectIdIllegal: ErrorMsg('300004'), // 项目ID不合法
   ProjectIdNotFound: ErrorMsg('300005'), // 项目ID不能为空
+  ProjectIdNotFoundOrArchive: ErrorMsg('300006'), // 项目不存在或者已经归档
   MissionNameNotFound: ErrorMsg('400001'), // 任务名称不能为空
   MissionDeadlineNotFound: ErrorMsg('400002'), // 任务截止时间不能为空
   MissionIdIllegal: ErrorMsg('400003'), // 任务ID不合法

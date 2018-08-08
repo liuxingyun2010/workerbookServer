@@ -143,7 +143,8 @@ module.exports = app => {
 
         // 查找用户，第一步验证用户名
         const findUser = await ctx.model.User.findOne({
-          username
+          username,
+          isDelete: false
         })
 
         if (findUser) {
@@ -485,10 +486,10 @@ module.exports = app => {
     }
 
     // 获取单个用户
-    async getOneUser(){
+    async getOneUser(_id){
        try {
         const { ctx } = this
-        const id = ctx.params.id
+        const id = _id || ctx.params.id
         const user = await this.findUserById(id)
         if (!user) {
           return Promise.reject(ResCode.UserDontExist)

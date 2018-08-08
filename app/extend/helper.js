@@ -7,5 +7,5 @@ module.exports = {
   isInt: str => {
     const reg = /^[1-9]\d*|0$/
     return reg.test(str)
-  }
+  },
 }

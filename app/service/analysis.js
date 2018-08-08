@@ -241,7 +241,7 @@ module.exports = app => {
 
         const list = Object.values(result)
 
-        await app.redis.set(`wb:analysis:departments:detail:${id}`, JSON.stringify(list), 'EX', 7200)
+        await app.redis.set(`wb:analysis:departments:detail:${id}`, JSON.stringify(list), 'EX', 100)
 
         return list
       } catch (e) {
@@ -253,7 +253,7 @@ module.exports = app => {
       }
     }
 
-     // 获取项目统计列表
+    // 获取项目统计列表
     async findProjectAnalysis() {
       try {
         const {
@@ -264,9 +264,7 @@ module.exports = app => {
         let projects = []
 
         let params = {
-          isDelete: {
-            $ne: true
-          },
+          isDelete: false,
           status: 1
         }
 
@@ -327,6 +325,115 @@ module.exports = app => {
           result.skip = skip
         }
 
+        return result
+      } catch (e) {
+        return Promise.reject({
+          ...ResCode.Error,
+          error: e,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+    //
+    async findProjectSummaryAnalysis() {
+      try {
+        const {
+          ctx
+        } = this
+
+        const id = ctx.params.id
+
+        const redisAnalysisProjectSummary = await app.redis.get(`wb:analysis:project:summary:${id}`)
+        if (redisAnalysisProjectSummary){
+          return JSON.parse(redisAnalysisProjectSummary)
+        }
+        let result = {}
+        let missions = {}
+
+        const projectInfo = await ctx.model.Project.findOne({
+          isDelete: false,
+          status: 1,
+          _id: id
+        }).populate('missions')
+
+        if (!projectInfo){
+          return Promise.reject(ResCode.ProjectIdNotFoundOrArchive)
+        }
+
+        const now = new Date()
+        result.name = projectInfo.name
+        result.deadline = projectInfo.deadline
+
+        if (now > result.deadline) {
+          result.isDelay = true
+        }
+        else {
+          result.isDelay = false
+        }
+
+        projectInfo.missions && projectInfo.missions.forEach((item, index) => {
+          const id = item._id
+          const name = item.name
+          const deadline = item.deadline
+
+          if (!missions[id]){
+            missions[id] = {}
+            missions[id].id = id
+            missions[id].name = name
+            missions[id].deadline = deadline
+
+            if (now > deadline) {
+              missions[id].isDelay = true
+            }
+            else {
+              missions[id].isDelay = false
+            }
+            missions[id].dates = []
+          }
+        })
+
+        const missionsAnalysisList = await ctx.model.Analysis.find({
+          projectId: id
+        }).sort({
+          date: 1
+        })
+
+        missionsAnalysisList.forEach((item, index) => {
+          const missionId = item.missionId
+          const dateInfo = {}
+
+          // 去重，入库时候去重
+          if (missions[missionId] && missions[missionId].dates.length > 0){
+            const index = missions[missionId].dates.findIndex(i => i.date === item.date)
+            if (index > -1) {
+              dateInfo.date = item.date
+              dateInfo.progress = item.missionProgress
+              dateInfo.isDelay = item.missionDelay
+              missions[missionId].dates.splice(index, 1, dateInfo)
+              return
+            }
+          }
+
+          if (!missions[missionId]){
+            missions[missionId] = {}
+            missions[missionId].name = item.missionName
+            missions[missionId].id = missionId
+            missions[missionId].dates = []
+            missions[missionId].userId = userId
+            missions[missionId].deadline = item.missionDeadline
+            missions[missionId].projectId = item.projectId
+            missions[missionId].projectName = item.projectName
+          }
+
+          dateInfo.date = item.date
+          dateInfo.progress = item.missionProgress
+          dateInfo.isDelay = item.missionDelay
+          missions[missionId].dates.push(dateInfo)
+        })
+        const list = Object.values(missions)
+        result.missions = list
+        await app.redis.set(`wb:analysis:project:summary:${id}`, JSON.stringify(result), 'EX', 100)
         return result
       } catch (e) {
         return Promise.reject({

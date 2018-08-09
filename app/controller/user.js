@@ -185,7 +185,7 @@ module.exports = app => {
         ctx
       } = this
       try {
-        const result = await ctx.service.user.findUserList()
+        const result = await ctx.service.user.f_findUserList()
         ctx.success({
           data: result
         })

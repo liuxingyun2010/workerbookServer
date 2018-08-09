@@ -1,5 +1,6 @@
 const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
+const moment = require('moment')
 
 module.exports = app => {
   class ProjectService extends app.Service {
@@ -99,7 +100,9 @@ module.exports = app => {
               path: 'user',
               select: '-createTime -updateTime -password -department -role'
             }
-          })
+          }).sort({
+          createTime: -1
+        })
 
         return list
       } catch (e) {
@@ -370,7 +373,7 @@ module.exports = app => {
 
         return await ctx.model.Project.create({
           name,
-          deadline,
+          deadline: new Date(`${deadline.split('T')[0]} 23:59:59`),
           description,
           departments,
           weight
@@ -407,7 +410,7 @@ module.exports = app => {
         }
 
         if (deadline) {
-          params.deadline = deadline
+          params.deadline = new Date(`${deadline.split('T')[0]} 23:59:59`)
         }
 
         if (departments && departments.length > 0) {

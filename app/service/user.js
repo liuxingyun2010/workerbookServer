@@ -302,7 +302,7 @@ module.exports = app => {
       }
     }
 
-    // 分页查找数据
+    // 分页查找数据 用户管理后台
     async findUserList() {
       try {
         const { ctx } = this
@@ -339,7 +339,60 @@ module.exports = app => {
             name: 1,
             _id: 1
           }
+        }).sort({
+          createTime: -1
         })
+
+        result.count = count
+        result.list = list
+
+        if(limit) {
+          result.limit = limit
+          result.skip = skip
+        }
+
+        return result
+      } catch (e) {
+        return Promise.reject({
+          ...ResCode.Error,
+          error: e,
+          status: HttpStatus.StatusInternalServerError
+        })
+      }
+    }
+
+     // 分页查找数据 用于前端
+    async f_findUserList() {
+      try {
+        const { ctx } = this
+
+        // 过滤掉管理员
+        const params = {
+          role: {$ne: 99},
+          isDelete: false
+        }
+
+        let result = {}
+
+        let { skip = 0, limit = 0, departments } = ctx.query
+        skip = Number(skip)
+        limit = Number(limit)
+
+        // 逗号隔开
+        if (departments) {
+          let ds = departments.split(',')
+          ds = ds.map(item => {
+            return app.mongoose.Types.ObjectId(item)
+          })
+
+          params.department = {
+            $in: ds
+          }
+        }
+
+        const count = await ctx.model.User.find(params).count()
+        // 查找用户并更新
+        const list = await ctx.model.User.find(params, 'nickname').skip(skip).limit(limit)
 
         result.count = count
         result.list = list

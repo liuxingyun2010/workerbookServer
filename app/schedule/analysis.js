@@ -13,6 +13,8 @@ module.exports = app => {
     fn()
   }
 
+  // let testCount = 0
+
   return {
     schedule: {
       cron: app.config.schedule, // 每天凌晨
@@ -30,6 +32,7 @@ module.exports = app => {
 
 
         const batchMission = []
+
 
         missions.forEach((item, index) => {
           const obj = {}

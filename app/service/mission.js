@@ -51,7 +51,7 @@ module.exports = app => {
 
         const missionResult = await ctx.model.Mission.create({
           name,
-          deadline,
+          deadline: new Date(`${deadline.split('T')[0]} 23:59:59`),
           user: app.mongoose.Types.ObjectId(userId),
           project: app.mongoose.Types.ObjectId(projectId),
           department: app.mongoose.Types.ObjectId(departmentId)
@@ -144,7 +144,7 @@ module.exports = app => {
         }
 
         if (deadline) {
-          sql.deadline = deadline
+          sql.deadline = new Date(`${deadline.split('T')[0]} 23:59:59`)
         }
 
         if (userId && !ctx.helper.isObjectId(userId)) {

@@ -2,7 +2,6 @@
  *  部门表字段
  *  name 部门名称
  *  count 部门人数
- *  status  1:正常
  *  isDelete 是否删除 true
  *  createTime 创建时间
  *  updateTIme 修改时间
@@ -20,10 +19,6 @@ module.exports = app => {
     count: {
       type: Number,
       default: 0
-    },
-    status: {
-      type: Number,
-      default: 1
     },
     isDelete: {
       type: Boolean,

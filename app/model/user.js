@@ -73,7 +73,7 @@ module.exports = app => {
       createdAt: 'createTime',
       updatedAt: 'updateTime'
     }
-  })
+  }).index({createTime: -1})
 
   return mongoose.model('User', UserSchema)
 }

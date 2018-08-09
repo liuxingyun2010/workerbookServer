@@ -5,7 +5,7 @@ module.exports = app => {
   const prefix = '/console'
   app.post(`/users/login`, 'user.login')
   app.get(`/users/profile`, app.jwt, checkJwt(), 'user.profile')
-  app.get(`/users/`, app.jwt, 'user.list')
+  app.get(`/users/`, app.jwt, 'user.f_list')
   app.post(`${prefix}/users/`, app.jwt, checkJwt(), auth([99]), 'user.add')
   app.put(`${prefix}/users/:id`, app.jwt, checkJwt(), auth([99]), 'user.edit')
   app.patch(`${prefix}/users/editPwd/:id`, app.jwt, checkJwt(), auth([99]), 'user.editPwd')

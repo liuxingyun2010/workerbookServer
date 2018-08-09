@@ -15,8 +15,7 @@ module.exports = app => {
         const departments = []
 
         const departmentList = await ctx.model.Department.find({
-          isDelete: false,
-          status: 1
+          isDelete: false
         })
 
         departmentList.forEach((item, index) => {
@@ -39,7 +38,6 @@ module.exports = app => {
 
         missions.forEach((item, index) => {
           const d = item.department
-
           const now = new Date()
 
           if (now > item.deadline) {
@@ -197,13 +195,13 @@ module.exports = app => {
           const dateInfo = {}
 
           // 去重，入库时候去重
-          if (missions[missionId] && missions[missionId].dates){
-            const index = missions[missionId].dates.findIndex(i => i.date === item.date)
+          if (missions[missionId] && missions[missionId].data){
+            const index = missions[missionId].data.findIndex(i => i.date === item.date)
             if (index > -1) {
-              dateInfo.date = item.date
+              dateInfo.day = item.date
               dateInfo.progress = item.missionProgress
               dateInfo.isDelay = item.missionDelay
-              missions[missionId].dates.splice(index, 1, dateInfo)
+              missions[missionId].data.splice(index, 1, dateInfo)
               return
             }
           }
@@ -212,23 +210,28 @@ module.exports = app => {
             missions[missionId] = {}
             missions[missionId].name = item.missionName
             missions[missionId].id = missionId
-            missions[missionId].dates = []
+            missions[missionId].data = []
             missions[missionId].userId = userId
             missions[missionId].deadline = item.missionDeadline
-            missions[missionId].projectId = item.projectId
-            missions[missionId].projectName = item.projectName
+            // missions[missionId].projectId = item.projectId
+            // missions[missionId].projectName = item.projectName
+
+            missions[missionId].project = {
+              id: item.projectId,
+              name: item.projectName
+            }
           }
 
-          dateInfo.date = item.date
+          dateInfo.day = item.date
           dateInfo.progress = item.missionProgress
           dateInfo.isDelay = item.missionDelay
-          missions[missionId].dates.push(dateInfo)
+          missions[missionId].data.push(dateInfo)
         })
 
         for (let key in missions){
           const item = missions[key]
           const userId = item.userId
-          const dates = item.dates
+          const dates = item.data
 
           // 说明未开始
           if (dates[dates.length - 1].progress === 0) {
@@ -389,7 +392,7 @@ module.exports = app => {
             else {
               missions[id].isDelay = false
             }
-            missions[id].dates = []
+            missions[id].data = []
           }
         })
 
@@ -404,13 +407,13 @@ module.exports = app => {
           const dateInfo = {}
 
           // 去重，入库时候去重
-          if (missions[missionId] && missions[missionId].dates.length > 0){
-            const index = missions[missionId].dates.findIndex(i => i.date === item.date)
+          if (missions[missionId] && missions[missionId].data.length > 0){
+            const index = missions[missionId].data.findIndex(i => i.date === item.date)
             if (index > -1) {
-              dateInfo.date = item.date
+              dateInfo.day = item.date
               dateInfo.progress = item.missionProgress
               dateInfo.isDelay = item.missionDelay
-              missions[missionId].dates.splice(index, 1, dateInfo)
+              missions[missionId].data.splice(index, 1, dateInfo)
               return
             }
           }
@@ -419,17 +422,17 @@ module.exports = app => {
             missions[missionId] = {}
             missions[missionId].name = item.missionName
             missions[missionId].id = missionId
-            missions[missionId].dates = []
+            missions[missionId].data = []
             missions[missionId].userId = userId
             missions[missionId].deadline = item.missionDeadline
             missions[missionId].projectId = item.projectId
             missions[missionId].projectName = item.projectName
           }
 
-          dateInfo.date = item.date
+          dateInfo.day = item.date
           dateInfo.progress = item.missionProgress
           dateInfo.isDelay = item.missionDelay
-          missions[missionId].dates.push(dateInfo)
+          missions[missionId].data.push(dateInfo)
         })
         const list = Object.values(missions)
         result.missions = list

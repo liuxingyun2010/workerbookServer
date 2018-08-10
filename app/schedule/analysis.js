@@ -13,7 +13,7 @@ module.exports = app => {
     fn()
   }
 
-  // let testCount = 0
+  let testCount = 0
 
   return {
     schedule: {
@@ -23,39 +23,25 @@ module.exports = app => {
     },
 
     async task(ctx) {
+      testCount ++
       try {
         const missions = await ctx.model.Mission.find({
           status: 1
         }).populate('user')
-        .populate('department')
-        .populate('project')
-
 
         const batchMission = []
-
 
         missions.forEach((item, index) => {
           const obj = {}
           obj.missionId = item._id
-          obj.missionName = item.name
-          obj.departmentId = item.department._id
-          obj.departmentName = item.department.name
           obj.date = moment().format('YYYY-MM-DD')
-          obj.missionProgress = item.progress
+          obj.progress = item.progress
           obj.userId = item.user._id
-          obj.nickname = item.user.nickname
-          obj.projectId = item.project._id
-          obj.projectName = item.project.name
-          obj.missionDeadline = item.deadline
-          obj.projectDeadline = item.project.deadline
-          obj.missionDelay = new Date() > item.deadline? true: false
-          obj.projectDelay = new Date() > item.project.deadline? true: false
-          obj.projectProgress = item.project.progress
 
           // if (true){
           //   obj.date = moment().subtract(Math.max(40 - testCount, 0), 'day').format('YYYY-MM-DD')
-          //   obj.missionProgress = Math.min(testCount + Math.floor(5* Math.random()), 100)
-          //   obj.projectProgress = Math.min(Math.floor((testCount + Math.floor(5* Math.random())) / 2), 100)
+          //   obj.progress = Math.min(testCount + Math.floor(5* Math.random()), 100)
+          //   // obj.projectProgress = Math.min(Math.floor((testCount + Math.floor(5* Math.random())) / 2), 100)
           // }
 
           batchMission.push(obj)

@@ -182,12 +182,19 @@ module.exports = app => {
         // 找到并且更新
         await app.redis.del(`wb:mission:${id}`)
 
-        const r = await ctx.model.Mission.update({
+        // 说明分配的人员变化了，此时需要判断此人是否在同一个部门
+        if (userId !== missionInfo.user._id) {
+          const userInfo = await ctx.service.user.getOneUser(userId)
+          if (userInfo.department._id !== missionInfo.department) {
+            sql.department = app.mongoose.Types.ObjectId(userInfo.department._id)
+          }
+        }
+
+        const result = await ctx.model.Mission.findOneAndUpdate({
           _id: id
         }, {
           $set: sql
         })
-
       } catch (e) {
         return Promise.reject({
           ...ResCode.Error,

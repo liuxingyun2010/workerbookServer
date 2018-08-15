@@ -104,6 +104,26 @@ module.exports = app => {
           createTime: -1
         })
 
+        list.forEach(item => {
+          const missions = item.missions
+
+          // 所有任务的进度 除以 数量 得到项目进度
+          let countProgress = 0
+          let now = new Date()
+          missions.forEach(doc => {
+            if (now > doc.deadline) {
+              doc._doc.isTimeout = true
+            }
+            else {
+              doc._doc.isTimeout = false
+            }
+            countProgress += doc.progress
+          })
+
+          item._doc.progress = Math.floor(countProgress / missions.length) || 0
+
+        })
+
         return list
       } catch (e) {
         return Promise.reject({

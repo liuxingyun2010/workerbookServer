@@ -2,7 +2,6 @@
  *  统计表字段
  *  missionId  任务id
  *  date 日期
- *  userId 用户id
  *  progress 任务进度
  */
 
@@ -15,10 +14,10 @@ module.exports = app => {
       type: mongoose.Schema.Types.ObjectId,
       required: true
     },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true
-    },
+    // userId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   required: true
+    // },
     progress: {
       type: Number,
       default: 0

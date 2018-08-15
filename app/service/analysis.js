@@ -1,22 +1,31 @@
 const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
+const moment = require('moment')
+
 module.exports = app => {
   class AnalysisService extends app.Service {
     // 获取部门统计列表
     async findDepartmentAnalysis() {
       try {
         const { ctx } = this
-        // const redisAnalysisDepartments = await app.redis.get('wb:analysis:departments')
-        // if (redisAnalysisDepartments){
-        //   return JSON.parse(redisAnalysisDepartments)
-        // }
 
         const result = {}
         const departments = []
+        const data = {}
+
+        let {
+          skip = 0, limit = 0
+        } = ctx.query
+        skip = Number(skip)
+        limit = Number(limit)
+
+        const count = await ctx.model.Department.find({isDelete: false}).count()
+
+        data.count = count
 
         const departmentList = await ctx.model.Department.find({
           isDelete: false
-        })
+        }).skip(skip).limit(limit)
 
         departmentList.forEach((item, index) => {
           const id = item._id
@@ -47,7 +56,7 @@ module.exports = app => {
             item._doc.isTimeout = false
           }
 
-          result[d].missions.push(item)
+          result[d] && result[d].missions && result[d].missions.push(item)
         })
 
 
@@ -57,9 +66,14 @@ module.exports = app => {
           departments.push(result[key])
         }
 
-        await app.redis.set('wb:analysis:departments', JSON.stringify(departments), 'EX', 100)
+        data.list = departments
 
-        return departments
+        if (limit) {
+          data.limit = limit
+          data.skip = skip
+        }
+
+        return data
       } catch (e) {
         return Promise.reject({
           ...ResCode.Error,
@@ -86,6 +100,7 @@ module.exports = app => {
           status: 1,
           department: app.mongoose.Types.ObjectId(id)
         }
+
         const department = await ctx.service.department.findOneDepartmentByRedis(id)
 
         const userList = await ctx.model.User.find(sql)
@@ -113,7 +128,7 @@ module.exports = app => {
             item._doc.isTimeout = false
           }
 
-          result[d] && result[d].missions.push(item)
+          result[d] && result[d].missions && result[d].missions.push(item)
         })
 
 
@@ -129,7 +144,7 @@ module.exports = app => {
           list: users
         }
 
-        await app.redis.set(`wb:analysis:departments:summary:${id}`, JSON.stringify(resultInfo), 'EX', 100)
+        // await app.redis.set(`wb:analysis:departments:summary:${id}`, JSON.stringify(resultInfo), 'EX', 7200)
 
         return resultInfo
       } catch (e) {
@@ -159,6 +174,9 @@ module.exports = app => {
         let reponse = []
         let inProgressMission = []
         let missionsInfo = {}
+        let users = []
+        let tempUserMission = {}
+
         let sql = {
           isDelete: false,
           status: 1,
@@ -167,30 +185,11 @@ module.exports = app => {
 
         const userList = await ctx.model.User.find(sql)
 
-        // 搜出所有目前正在进行的任务
-        const hasMissions = await ctx.model.Mission.find({
-          isDelete: false,
-          status: 1,
-        }).populate('project')
-
-        hasMissions.forEach((item, index) => {
-          inProgressMission.push(item._id)
-
-          if (!missionsInfo[item._id]) {
-            missionsInfo[item._id] = {}
-            missionsInfo[item._id].projectName = item.project.name
-            missionsInfo[item._id].missionProgress = item.progress
-            missionsInfo[item._id].projectId = item.project._id
-            missionsInfo[item._id].missionDeadline = item.deadline
-            missionsInfo[item._id].missionName = item.name
-          }
-        })
-
         userList.forEach((item, index) => {
           const id = item._id
           const nickname = item.nickname
           const title = item.title
-
+          users.push(id)
           if (!result[id]){
             result[id] = {}
             result[id].id = id
@@ -200,38 +199,59 @@ module.exports = app => {
           }
         })
 
-        // 找出目前统计表中所有正在进行的任务
-        const missionsAnalysisList = await ctx.model.Analysis.find({
-          missionId: {
-            $in: hasMissions
+        // 搜出所有目前正在进行的任务
+        const hasMissions = await ctx.model.Mission.find({
+          isDelete: false,
+          status: 1,
+          user: {
+            $in: users
           }
-        }).sort({
-          date: 1
-        })
+        }).populate('project')
 
-        missionsAnalysisList.forEach((item, index) => {
-          const userId = item.userId
-          const missionId = item.missionId
+        hasMissions.forEach((item, index) => {
+          const userId = item.user
+          const missionId = item._id
 
-          const dateInfo = {}
+          inProgressMission.push(missionId)
+
           if (!result[userId]) {
             return
           }
 
           if (!result[userId]['missions'][missionId]) {
             result[userId]['missions'][missionId] = {}
-
             const r = result[userId]['missions'][missionId]
-            r.name = missionsInfo[missionId].missionName
+            r.name = item.name
             r.id = missionId
             r.data = []
             r.project = {}
-            r.deadline = missionsInfo[missionId].missionDeadline
-            r.project.name = missionsInfo[missionId].projectName
-            r.project.id = missionsInfo[missionId].projectId
-            r.progress = missionsInfo[missionId].missionProgress
+            r.deadline = item.deadline
+            r.project.name = item.project.name
+            r.project.id = item.project._id
+            r.progress = item.progress
+            r.today = moment().format('YYYY-MM-DD')
+            r.createTime = item.createTime
+            tempUserMission[missionId] = userId
           }
+        })
 
+
+        // 找出目前统计表中所有正在进行的任务
+        const missionsAnalysisList = await ctx.model.Analysis.find({
+          missionId: {
+            $in: inProgressMission
+          }
+        }).sort({
+          date: 1
+        })
+
+        missionsAnalysisList.forEach((item, index) => {
+          const missionId = item.missionId
+          const userId = tempUserMission[missionId]
+          const dateInfo = {}
+          if (!result[userId] || !result[userId]['missions'] || !result[userId]['missions'][missionId]) {
+            return
+          }
           dateInfo.day = item.date
           dateInfo.progress = item.progress
           result[userId]['missions'][missionId].data.push(dateInfo)
@@ -250,7 +270,7 @@ module.exports = app => {
           reponse.push(u)
         })
 
-        await app.redis.set(`wb:analysis:departments:detail:${id}`, JSON.stringify(reponse), 'EX', 100)
+        // await app.redis.set(`wb:analysis:departments:detail:${id}`, JSON.stringify(reponse), 'EX', 7200)
 
         return reponse
       } catch (e) {
@@ -289,6 +309,7 @@ module.exports = app => {
             select: {
               _id:1,
               name: 1,
+              progress: 1,
               deadline: 1
             }
           }).skip(skip).limit(limit)
@@ -315,6 +336,8 @@ module.exports = app => {
           item._doc.costDay = costDay
           item._doc.totalDay = totalDay
 
+          // 所有任务的进度 除以 数量 得到项目进度
+          let countProgress = 0
           missions.forEach(doc => {
             if (now > doc.deadline) {
               doc._doc.isTimeout = true
@@ -322,7 +345,10 @@ module.exports = app => {
             else {
               doc._doc.isTimeout = false
             }
+            countProgress += doc.progress
           })
+
+          item._doc.progress = Math.floor(countProgress / missions.length) || 0
 
           projects.push(item)
         })
@@ -344,7 +370,7 @@ module.exports = app => {
       }
     }
 
-    //
+    // 获取每个项目的具体详情数据
     async findProjectSummaryAnalysis() {
       try {
         const {
@@ -357,6 +383,7 @@ module.exports = app => {
         // if (redisAnalysisProjectSummary){
         //   return JSON.parse(redisAnalysisProjectSummary)
         // }
+
         let result = {}
         let missions = {}
         let missionIds = []
@@ -422,18 +449,6 @@ module.exports = app => {
           const missionId = item.missionId
           const dateInfo = {}
 
-          // // 去重，入库时候去重
-          // if (missions[missionId] && missions[missionId].data.length > 0){
-          //   const index = missions[missionId].data.findIndex(i => i.date === item.date)
-          //   if (index > -1) {
-          //     dateInfo.day = item.date
-          //     dateInfo.progress = item.missionProgress
-          //     dateInfo.isTimeout = item.missionDelay
-          //     missions[missionId].data.splice(index, 1, dateInfo)
-          //     return
-          //   }
-          // }
-
           if (!missions[missionId]){
             missions[missionId] = {}
             missions[missionId].name = mimissionInfo[missionId].name
@@ -441,8 +456,6 @@ module.exports = app => {
             missions[missionId].data = []
             missions[missionId].userId = userId
             missions[missionId].deadline = mimissionInfo[missionId].name
-            // missions[missionId].projectId = item.projectId
-            // missions[missionId].projectName = item.projectName
           }
 
           dateInfo.day = item.date
@@ -451,7 +464,7 @@ module.exports = app => {
         })
         const list = Object.values(missions)
         result.missions = list
-        await app.redis.set(`wb:analysis:project:summary:${id}`, JSON.stringify(result), 'EX', 100)
+        // await app.redis.set(`wb:analysis:project:summary:${id}`, JSON.stringify(result), 'EX', 100)
         return result
       } catch (e) {
         return Promise.reject({

@@ -35,7 +35,6 @@ module.exports = app => {
         let { skip = 0, limit = 0 } = ctx.query
         skip = Number(skip)
         limit = Number(limit)
-
         if (limit){
           sql.push({
             $skip: skip

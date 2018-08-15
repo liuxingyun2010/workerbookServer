@@ -160,6 +160,25 @@ module.exports = app => {
             progress,
             missionId,
           })
+
+          // 同步进度到统计表
+          const analysisInfo = await ctx.model.Analysis.findOne({
+            date,
+            missionId
+          })
+
+          if (analysisInfo) {
+            await ctx.model.Analysis.update({
+              progress
+            })
+          }
+          else {
+            await ctx.model.Analysis.create({
+              progress,
+              missionId,
+              date
+            })
+          }
         }
 
       } catch (e) {
@@ -247,12 +266,17 @@ module.exports = app => {
           return Promise.reject(ResCode.DailyStatusUnauthorized)
         }
 
-        // 找到当前的missionId
-        const singleMission = daily.dailyList.find(item => {
+        // 找到当前的missionId 或者是eventId
+        const singleDaily = daily.dailyList.find(item => {
           return String(item._id) === String(id)
         })
 
-        const missionId = singleMission ? singleMission.missionId : ''
+        if (!singleDaily){
+          return Promise.reject(ResCode.DailyNotFound)
+        }
+
+        const missionOrEventId = singleDaily.missionId || singleDaily.eventId
+        const type = singleDaily.missionId ? 'mission' : 'event'
 
         // 删除
         const result = await ctx.model.Daily.update({
@@ -262,25 +286,39 @@ module.exports = app => {
             dailyList: {
               _id: id,
             },
-          },
+          }
         })
 
         // 当前删除的是否是此任务在今天的最后一条数据，如果是，则需要把任务的进度更新到昨天
-        if (missionId) {
-          const date = moment().format('YYYY-MM-DD')
-          const userId = ctx.userInfo._id
-          const sql = {
-            userId,
-            date,
-            'dailyList.missionId': missionId,
-          }
-          const list = await ctx.model.Daily.findOne(sql)
+        const date = moment().format('YYYY-MM-DD')
+        const userId = ctx.userInfo._id
+        const sql = {
+          userId,
+          date
+        }
 
-          if (!list || list.dailyList.length === 0) {
-          //  更新进度为昨天的进度
+        const list = await ctx.model.Daily.findOne(sql)
+        if (!list || list.dailyList.length === 0) {
+          // 删掉此条日报
+          const ds = await ctx.model.Daily.remove({
+            userId,
+            date
+          })
+
+          if (type === 'mission') {
+            await ctx.model.Analysis.findOne({
+
+            })
+            // 更新进度为昨天的进度
             await ctx.service.mission.updateProgress({
               missionId,
               progress: 100,
+            })
+
+            // 删除统计表中的当天的记录
+            await ctx.model.Analysis.remove({
+              date,
+              missionId
             })
           }
         }

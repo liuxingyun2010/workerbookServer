@@ -387,13 +387,15 @@ module.exports = app => {
         let result = {}
         let missions = {}
         let missionIds = []
-        let missionInfo = {}
 
         const projectInfo = await ctx.model.Project.findOne({
           isDelete: false,
           status: 1,
           _id: id
-        }).populate('missions')
+        })
+        .populate({
+          path: 'missions'
+        })
 
         if (!projectInfo){
           return Promise.reject(ResCode.ProjectIdNotFoundOrArchive)
@@ -402,7 +404,7 @@ module.exports = app => {
         const now = new Date()
         result.name = projectInfo.name
         result.deadline = projectInfo.deadline
-
+        result.createTime = projectInfo.createTime
         if (now > result.deadline) {
           result.isTimeout = true
         }
@@ -410,17 +412,25 @@ module.exports = app => {
           result.isTimeout = false
         }
 
-        projectInfo.missions && projectInfo.missions.forEach((item, index) => {
+        let totalProgress = 0
+        let totalMissions = projectInfo.missions || []
+
+        totalMissions.forEach(async (item, index) => {
           const id = item._id
           const name = item.name
           const deadline = item.deadline
+          const createTime = item.createTime
+          const userId = item.user
+
           missionIds.push(id)
+
+          totalProgress += item.progress
           if (!missions[id]){
             missions[id] = {}
             missions[id].id = id
             missions[id].name = name
             missions[id].deadline = deadline
-
+            missions[id].createTime = createTime
             if (now > deadline) {
               missions[id].isTimeout = true
             }
@@ -429,11 +439,11 @@ module.exports = app => {
             }
             missions[id].data = []
 
-
-            missionInfo[id] = {}
-            missionInfo[id].id = id
-            missionInfo[id].name = name
-            missionInfo[id].deadline = deadline
+            // 从缓存中获取
+            const userInfo = await ctx.service.user.getOneUser(userId)
+            missions[id].user = {}
+            missions[id].user.nickname = userInfo.nickname || ''
+            missions[id].user.id = userInfo._id || ''
           }
         })
 
@@ -448,22 +458,13 @@ module.exports = app => {
         missionsAnalysisList.forEach((item, index) => {
           const missionId = item.missionId
           const dateInfo = {}
-
-          if (!missions[missionId]){
-            missions[missionId] = {}
-            missions[missionId].name = mimissionInfo[missionId].name
-            missions[missionId].id = missionId
-            missions[missionId].data = []
-            missions[missionId].userId = userId
-            missions[missionId].deadline = mimissionInfo[missionId].name
-          }
-
           dateInfo.day = item.date
           dateInfo.progress = item.progress
           missions[missionId].data.push(dateInfo)
         })
         const list = Object.values(missions)
         result.missions = list
+        result.progress = Math.floor(totalProgress / totalMissions.length)
         // await app.redis.set(`wb:analysis:project:summary:${id}`, JSON.stringify(result), 'EX', 100)
         return result
       } catch (e) {

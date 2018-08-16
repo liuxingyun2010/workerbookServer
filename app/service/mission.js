@@ -1,5 +1,6 @@
 const ResCode = require('../middleware/responseStatus')
 const HttpStatus = require('../middleware/httpStatus')
+const moment = require('moment')
 
 module.exports = app => {
   class ProjectService extends app.Service {
@@ -77,8 +78,9 @@ module.exports = app => {
           ctx
         } = this
 
-        const id = obj.missionId
-        const progress = obj.progress || 0
+        const id = (obj && obj.missionId) || ctx.params.id
+        const progress = (obj && obj.progress) || ctx.request.body.progress || 0
+        const userId = ctx.userInfo._id
 
         if (progress && !ctx.helper.isInt(progress) && progress <=100) {
           return Promise.reject(ResCode.DailyProgressIllegal)
@@ -106,13 +108,48 @@ module.exports = app => {
         await app.redis.del(`wb:mission:${id}`)
 
         // 找到并且更新
-        return await ctx.model.Mission.update({
+        await ctx.model.Mission.update({
           _id: id
         }, {
           $set: {
             progress
           }
         })
+
+        // 修改日报进度
+        const myDaily = await ctx.model.Daily.findOne({
+          date: moment().format('YYYY-MM-DD'),
+          userId
+        })
+
+        if (myDaily) {
+          let dailyList = myDaily.dailyList
+
+          for (let i = 0; i < dailyList.length; i ++) {
+            if (dailyList[i].missionId === id) {
+              dailyList[i].progress = progress
+            }
+          }
+          await ctx.model.Daily.update({
+            date: moment().format('YYYY-MM-DD'),
+            userId
+          }, {
+            $set: {
+              dailyList: dailyList
+            }
+          })
+        }
+
+        // 更新统计进度
+        await ctx.model.Analysis.update({
+          date: moment().format('YYYY-MM-DD'),
+          missionId: id
+        }, {
+          $set: {
+            'progress': progress
+          }
+        })
+
       } catch (e) {
         return Promise.reject({
           ...ResCode.Error,

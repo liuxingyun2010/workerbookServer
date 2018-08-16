@@ -169,7 +169,12 @@ module.exports = app => {
 
           if (analysisInfo) {
             await ctx.model.Analysis.update({
-              progress
+              missionId,
+              date
+            },{
+              $set: {
+                progress
+              }
             })
           }
           else {
@@ -306,19 +311,22 @@ module.exports = app => {
           })
 
           if (type === 'mission') {
-            await ctx.model.Analysis.findOne({
-
-            })
-            // 更新进度为昨天的进度
-            await ctx.service.mission.updateProgress({
-              missionId,
-              progress: 100,
-            })
-
             // 删除统计表中的当天的记录
             await ctx.model.Analysis.remove({
               date,
-              missionId
+              missionId: missionOrEventId
+            })
+
+            const lastDailyInfo = await ctx.model.Analysis.findOne({
+              missionId: missionOrEventId
+            }).sort({
+              createTime: -1
+            })
+
+            // 更新进度为昨天的进度
+            await ctx.service.mission.updateProgress({
+              missionId: missionOrEventId,
+              progress: lastDailyInfo? lastDailyInfo.progress : 0,
             })
           }
         }
@@ -339,7 +347,7 @@ module.exports = app => {
         } = this
 
         let {
-          skip = 0, limit = 0, userId, date, departmentId,
+          skip = 0, limit = 0, userId, date, department,
         } = ctx.query
 
         skip = Number(skip)
@@ -349,11 +357,21 @@ module.exports = app => {
           return Promise.reject(ResCode.UserIdIllegal)
         }
 
-        if (departmentId && !ctx.helper.isObjectId(departmentId)){
+        if (department && !ctx.helper.isObjectId(department)){
           return Promise.reject(RecCode.DepartmentIdIllegal)
         }
 
-        const currentDate = date || moment().format('YYYY-MM-DD')
+        let currentDate = date || moment().format('YYYY-MM-DD')
+
+        if (currentDate === '0') {
+          currentDate = moment().format('YYYY-MM-DD')
+        }
+        else if (currentDate === '1') {
+          currentDate = moment().subtract(1, 'day').format('YYYY-MM-DD')
+        }
+        else if (currentDate === '2') {
+          currentDate = moment().subtract(2, 'day').format('YYYY-MM-DD')
+        }
 
         const sql = {
           date: currentDate
@@ -363,12 +381,14 @@ module.exports = app => {
           sql.userId = userId
         }
 
-        if (departmentId) {
-          sql.departmentId = departmentId
+        if (department) {
+          sql.departmentId = department
         }
 
         const result = {}
-        const list = await ctx.model.Daily.find(sql, '-createTime').skip(skip).limit(limit)
+        const list = await ctx.model.Daily.find(sql, '-createTime').sort({
+          updateTime: -1
+        }).skip(skip).limit(limit)
 
 
         const count = await ctx.model.Daily.find(sql).count()

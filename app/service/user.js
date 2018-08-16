@@ -416,7 +416,7 @@ module.exports = app => {
     async updatePwd() {
       try {
         const { ctx } = this
-        const id = ctx.params.id
+        const id = ctx.userInfo._id
         const requestBody = ctx.request.body
 
         const {

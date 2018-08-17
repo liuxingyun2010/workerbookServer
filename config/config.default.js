@@ -26,7 +26,7 @@ module.exports = appInfo => {
 
   // mongoose
   config.mongoose = {
-    url: 'mongodb://127.0.0.1:27017/workbook',
+    url: 'mongodb://127.0.0.1:27017/workerbook',
     options: {},
   }
 

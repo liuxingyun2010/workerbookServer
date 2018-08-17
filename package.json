@@ -27,16 +27,18 @@
     "node": ">=8.9.0"
   },
   "scripts": {
-    "start": "egg-scripts start --daemon --title=egg-server-dailyV2Server",
-    "stop": "egg-scripts stop --title=egg-server-dailyV2Server",
-    "dev": "egg-bin dev",
+    "onlinetest": "egg-scripts stop && egg-scripts start --daemon  --port=20002 --ignore-stderr --env=onlinetest --title=egg-server-wordkerbookServer",
+    "start": "egg-scripts stop && egg-scripts start --daemon --port=20002 --ignore-stderr --title=egg-server-wordkerbookServer",
+    "stop": "egg-scripts stop --title=egg-server-wordkerbookServer",
+    "dev": "egg-bin dev --port=20002",
     "debug": "egg-bin debug",
     "test": "npm run lint -- --fix && npm run test-local",
     "test-local": "egg-bin test",
     "cov": "egg-bin cov",
-    "lint": "eslint .",
+    "lint": "eslint ./app",
     "ci": "npm run lint && npm run cov",
-    "autod": "autod"
+    "autod": "autod",
+    "doc": "apidoc -i ./app -o ./docs"
   },
   "ci": {
     "version": "8"
